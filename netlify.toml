@@ -1,0 +1,26 @@
+# Netlify configuration for World Chat (Next.js 15 + Prisma/Neon)
+# The official Next.js runtime plugin handles SSR, Route Handlers and the
+# App Router automatically.
+#
+# Build command, step by step:
+#   rm -f package-lock.json  → the lockfile was generated on Windows; npm's
+#       optional-dependency bug then skips Linux-only native binaries
+#       (lightningcss-linux-x64-gnu, @tailwindcss/oxide-linux-x64-gnu) on
+#       Netlify's Linux builder. Removing it forces a clean, platform-correct
+#       install and fixes the "Cannot find module lightningcss.linux-x64-gnu"
+#       error from Tailwind v4.
+#   npm install             → fresh install with the correct Linux binaries.
+#   prisma generate         → generate the typed Prisma client (rhel target).
+#   next build              → production build.
+
+[build]
+  command = "rm -f package-lock.json && npm install && prisma generate && next build"
+  publish = ".next"
+
+[build.environment]
+  # Build only; runtime DB vars (DATABASE_URL, DIRECT_URL,
+  # NEXT_PUBLIC_DATA_SOURCE) are set in the Netlify dashboard.
+  NODE_VERSION = "20"
+
+[[plugins]]
+  package = "@netlify/plugin-nextjs"
