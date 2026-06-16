@@ -6,7 +6,7 @@ import type { Invoice } from "@/lib/types";
 const COMPANY = {
   name: "WorldChat",
   tagline: "Commercial Real Estate Marketplace",
-  email: "billing@worldchat.dev",
+  email: "billing@worldchat.ph",
 };
 
 export async function downloadInvoicePdf(inv: Invoice): Promise<void> {

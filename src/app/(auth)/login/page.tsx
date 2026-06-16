@@ -70,10 +70,6 @@ export default function LoginPage() {
             </Link>
           </p>
         </form>
-
-        <p className="mt-4 rounded-xl bg-white/10 p-3 text-center text-xs text-slate-300">
-          Demo (any password): admin@worldchat.dev · maria@worldchat.dev
-        </p>
       </div>
     </div>
   );
