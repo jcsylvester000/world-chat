@@ -3,18 +3,21 @@
 # App Router automatically.
 #
 # Build command, step by step:
-#   rm -f package-lock.json  → the lockfile was generated on Windows; npm's
-#       optional-dependency bug then skips Linux-only native binaries
-#       (lightningcss-linux-x64-gnu, @tailwindcss/oxide-linux-x64-gnu) on
-#       Netlify's Linux builder. Removing it forces a clean, platform-correct
-#       install and fixes the "Cannot find module lightningcss.linux-x64-gnu"
-#       error from Tailwind v4.
-#   npm install             → fresh install with the correct Linux binaries.
-#   prisma generate         → generate the typed Prisma client (rhel target).
-#   next build              → production build.
+#   rm -rf node_modules package-lock.json
+#       The lockfile was generated on Windows; npm's optional-dependency bug
+#       then skips Linux-only native binaries (lightningcss-linux-x64-gnu,
+#       @tailwindcss/oxide-linux-x64-gnu) on Netlify's Linux builder. Netlify's
+#       own install step also pre-populates node_modules from that lockfile, so
+#       a later `npm install` reports "up to date" and never adds the missing
+#       binary. Removing BOTH the lockfile and node_modules forces a genuinely
+#       fresh, platform-correct install and fixes the
+#       "Cannot find module lightningcss.linux-x64-gnu" error from Tailwind v4.
+#   npm install      → clean install with the correct Linux binaries.
+#   prisma generate  → generate the typed Prisma client (rhel target).
+#   next build       → production build.
 
 [build]
-  command = "rm -f package-lock.json && npm install && prisma generate && next build"
+  command = "rm -rf node_modules package-lock.json && npm install && prisma generate && next build"
   publish = ".next"
 
 [build.environment]
