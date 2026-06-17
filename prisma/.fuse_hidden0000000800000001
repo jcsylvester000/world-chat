@@ -83,7 +83,6 @@ model Profile {
   threadsB       DirectThread[]   @relation("ThreadParticipantB")
   directMessages DirectMessage[]
   leads          Lead[]
-  favorites      Favorite[]
 
   createdAt DateTime @default(now())
 }
@@ -113,7 +112,6 @@ model Property {
   attachments    PropertyAttachment[]
   requests       PropertyRequest[]
   leads          Lead[]
-  favoritedBy    Favorite[]
 
   @@index([ownerId])
   @@index([location])
@@ -516,17 +514,4 @@ model Lead {
 
   @@index([ownerId])
   @@index([stageId])
-}
-
-// ─── Favorites / saved listings ────────────────────────────────
-model Favorite {
-  id         String   @id @default(cuid())
-  user       Profile  @relation(fields: [userId], references: [id], onDelete: Cascade)
-  userId     String
-  property   Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
-  propertyId String
-  createdAt  DateTime @default(now())
-
-  @@unique([userId, propertyId])
-  @@index([userId])
 }

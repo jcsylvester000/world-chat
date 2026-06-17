@@ -15,7 +15,6 @@ import { useAuthStore } from "@/lib/store/auth-store";
 import { useChatStore } from "@/lib/store/chat-store";
 import { findProfileById, findVisiblePropertyById, getRequest, hasAccess } from "@/lib/data/services";
 import { displayName, formatPeso, formatDate } from "@/lib/utils";
-import FavoriteButton from "@/components/FavoriteButton";
 import type { Profile, Property, PropertyRequest } from "@/lib/types";
 
 const PropertyMap = dynamic(() => import("@/components/PropertyMap"), {
@@ -119,12 +118,9 @@ export default function PropertyDetailPage() {
       <div className="grid gap-6 lg:grid-cols-3">
         <div className="space-y-5 lg:col-span-2">
           <div>
-            <div className="flex items-center justify-between gap-2">
-              <div className="flex items-center gap-2">
-                <Badge tone="blue">{property.type}</Badge>
-                {isOwner && <Badge tone="green">Your listing</Badge>}
-              </div>
-              <FavoriteButton propertyId={property.id} property={property} size={22} className="shrink-0" />
+            <div className="flex items-center gap-2">
+              <Badge tone="blue">{property.type}</Badge>
+              {isOwner && <Badge tone="green">Your listing</Badge>}
             </div>
             <h1 className="mt-2 text-2xl font-bold">{property.title}</h1>
             <p className="mt-1 text-slate-500">📍 {property.location}</p>

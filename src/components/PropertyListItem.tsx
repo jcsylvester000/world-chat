@@ -3,6 +3,7 @@
 import { memo } from "react";
 import Link from "next/link";
 import Badge from "@/components/ui/Badge";
+import FavoriteButton from "@/components/FavoriteButton";
 import { formatDate, formatPeso } from "@/lib/utils";
 import type { Property } from "@/lib/types";
 
@@ -58,14 +59,22 @@ function PropertyListItem({
               <span className="text-xs font-medium text-slate-400">On request</span>
             )}
           </span>
-          {onDm && property.ownerId !== currentUserId && (
-            <button
-              onClick={() => onDm(property.ownerId)}
-              className="rounded-md border border-line px-2 py-0.5 text-[11px] font-medium text-slate-600 hover:bg-slate-50"
-            >
-              💬 Message
-            </button>
-          )}
+          <div className="flex items-center gap-1">
+            <FavoriteButton
+              propertyId={property.id}
+              property={property}
+              size={16}
+              className="!bg-transparent !p-1 !shadow-none"
+            />
+            {onDm && property.ownerId !== currentUserId && (
+              <button
+                onClick={() => onDm(property.ownerId)}
+                className="rounded-md border border-line px-2 py-0.5 text-[11px] font-medium text-slate-600 hover:bg-slate-50"
+              >
+                💬 Message
+              </button>
+            )}
+          </div>
         </div>
       </div>
     </div>

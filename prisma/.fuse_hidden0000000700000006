@@ -124,12 +124,6 @@ async function main() {
     });
   }
 
-  for (const f of favorites) {
-    await prisma.favorite.create({
-      data: { id: f.id, userId: f.userId, propertyId: f.propertyId, createdAt: new Date(f.createdAt) },
-    });
-  }
-
   console.log(
     `✅ Seeded ${profiles.length} profiles, ${properties.length} properties, ` +
       `${leadStages.length} stages, ${leadSources.length} sources, ${leadTypes.length} types, ${leads.length} leads.`

@@ -40,10 +40,10 @@ const TYPE_FROM_DB: Record<DbPropertyType, PropertyType> = {
   Retail: "Retail",
 };
 
-export type Row = DbProperty & { attachments: DbAttachment[] };
+type Row = DbProperty & { attachments: DbAttachment[] };
 
 // ── mappers ──
-export function toProperty(row: Row): Property {
+function toProperty(row: Row): Property {
   return {
     id: row.id,
     ownerId: row.ownerId,

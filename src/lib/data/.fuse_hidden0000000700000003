@@ -20,7 +20,6 @@ import type {
   LeadStage,
   LeadSource,
   LeadType,
-  Favorite,
 } from "@/lib/types";
 
 // ─── In-memory mock database ────────────────────────────────────
@@ -774,14 +773,4 @@ export const leads: Lead[] = [
     sourceId: "lsrc-walkin", typeId: "lt-buyer", stageId: "ls-new", status: "open",
     expectedCloseDate: "2026-09-01", closedAt: null, lostReason: null,
     createdAt: "2026-06-13T09:00:00.000Z", updatedAt: "2026-06-14T09:00:00.000Z" },
-];
-
-// ─── Favorites / saved listings ─────────────────────────────────
-export const favorites: Favorite[] = [
-  { id: "fav-1", userId: "u-daniel", propertyId: "p-9",  createdAt: "2026-06-16T08:30:00.000Z" },
-  { id: "fav-2", userId: "u-daniel", propertyId: "p-1",  createdAt: "2026-06-16T09:00:00.000Z" },
-  { id: "fav-3", userId: "u-daniel", propertyId: "p-16", createdAt: "2026-06-16T16:35:00.000Z" },
-  { id: "fav-4", userId: "u-sofia",  propertyId: "p-3",  createdAt: "2026-06-15T13:10:00.000Z" },
-  { id: "fav-5", userId: "u-sofia",  propertyId: "p-13", createdAt: "2026-06-15T14:05:00.000Z" },
-  { id: "fav-6", userId: "u-lena",   propertyId: "p-8",  createdAt: "2026-05-28T01:00:00.000Z" },
 ];

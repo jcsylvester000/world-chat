@@ -29,7 +29,6 @@ const TYPE_TO_DB: Record<PropertyType, DbPropertyType> = {
 async function main() {
   // Clear in dependency order (dev seed — safe to wipe).
   await prisma.lead.deleteMany();
-  await prisma.favorite.deleteMany();
   await prisma.leadStage.deleteMany();
   await prisma.leadSource.deleteMany();
   await prisma.leadType.deleteMany();
@@ -121,12 +120,6 @@ async function main() {
         createdAt: new Date(l.createdAt),
         updatedAt: new Date(l.updatedAt),
       },
-    });
-  }
-
-  for (const f of favorites) {
-    await prisma.favorite.create({
-      data: { id: f.id, userId: f.userId, propertyId: f.propertyId, createdAt: new Date(f.createdAt) },
     });
   }
 

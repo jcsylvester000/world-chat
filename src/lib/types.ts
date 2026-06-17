@@ -392,3 +392,11 @@ export interface LeadMeta {
 
 // Days a lead can sit untouched in a stage before it's flagged "stale".
 export const LEAD_ROTTEN_DAYS = 14;
+
+// ─── Favorites / saved listings ─────────────────────────────────
+export interface Favorite {
+  id: string;
+  userId: string;
+  propertyId: string;
+  createdAt: string;
+}

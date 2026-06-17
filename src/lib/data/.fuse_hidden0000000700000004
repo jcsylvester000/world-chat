@@ -26,7 +26,6 @@ import {
   leadStages,
   leadSources,
   leadTypes,
-  favorites,
 } from "./mock-data";
 import { matchesListingFilters } from "@/lib/filter";
 import {
@@ -1260,38 +1259,5 @@ export async function deleteLead(id: string): Promise<void> {
   }
   const i = leads.findIndex((x) => x.id === id);
   if (i >= 0) leads.splice(i, 1);
-  await latency(null);
-}
-
-// ─── Favorites / saved listings ─────────────────────────────────
-export async function listFavoriteProperties(userId: string): Promise<Property[]> {
-  if (USE_PRISMA) return apiGet<Property[]>(`/api/favorites?userId=${encodeURIComponent(userId)}`);
-  const ordered = favorites
-    .filter((f) => f.userId === userId)
-    .sort((a, b) => b.createdAt.localeCompare(a.createdAt));
-  const result = ordered
-    .map((f) => properties.find((p) => p.id === f.propertyId))
-    .filter((p): p is Property => !!p);
-  return latency(result);
-}
-
-export async function addFavorite(userId: string, propertyId: string): Promise<void> {
-  if (USE_PRISMA) {
-    await apiSend("/api/favorites", "POST", { userId, propertyId });
-    return;
-  }
-  if (!favorites.some((f) => f.userId === userId && f.propertyId === propertyId)) {
-    favorites.unshift({ id: uid("fav"), userId, propertyId, createdAt: nowIso() });
-  }
-  await latency(null);
-}
-
-export async function removeFavorite(userId: string, propertyId: string): Promise<void> {
-  if (USE_PRISMA) {
-    await apiSend("/api/favorites", "DELETE", { userId, propertyId });
-    return;
-  }
-  const i = favorites.findIndex((f) => f.userId === userId && f.propertyId === propertyId);
-  if (i >= 0) favorites.splice(i, 1);
   await latency(null);
 }
