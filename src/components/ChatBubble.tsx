@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Avatar from "@/components/ui/Avatar";
 import MessageText from "@/components/MessageText";
+import MessageEmbeds from "@/components/MessageEmbeds";
 import { cn, displayName, formatTime } from "@/lib/utils";
 import type { MessageContentType, Reaction } from "@/lib/types";
 
@@ -167,6 +168,8 @@ export default function ChatBubble({
             )}
           </div>
         )}
+
+        {!editing && !deleted && isText && <MessageEmbeds content={content} />}
 
         {!deleted && byEmoji.size > 0 && (
           <div className={cn("mt-1 flex flex-wrap gap-1", mine && "justify-end")}>
