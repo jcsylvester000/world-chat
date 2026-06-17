@@ -19,6 +19,7 @@ import FavoriteButton from "@/components/FavoriteButton";
 import RequestViewingButton from "@/components/RequestViewingButton";
 import VerifiedBadge from "@/components/VerifiedBadge";
 import BrokerReviews from "@/components/BrokerReviews";
+import RoiCalculator from "@/components/RoiCalculator";
 import type { Profile, Property, PropertyRequest } from "@/lib/types";
 
 const PropertyMap = dynamic(() => import("@/components/PropertyMap"), {
@@ -151,6 +152,8 @@ export default function PropertyDetailPage() {
               {property.description || "No description provided."}
             </p>
           </div>
+
+          <RoiCalculator property={property} />
 
           {/* Authority to Sell */}
           {showAtsSection && atsDoc && (
