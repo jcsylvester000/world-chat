@@ -1578,7 +1578,7 @@ export async function reviewVerification(
   }
   auditLogs.unshift({
     id: uid("log"),
-    adminId: "u-admin",
+    adminId: profiles.find((p) => p.email === reviewerEmail)?.id ?? "u-maria",
     adminEmail: reviewerEmail,
     action: approve ? "Verified broker" : "Rejected verification",
     target: req.userEmail,

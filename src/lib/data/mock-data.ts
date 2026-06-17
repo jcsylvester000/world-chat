@@ -30,9 +30,17 @@ import type {
 
 // ─── In-memory mock database ────────────────────────────────────
 // Seed data shared by the in-memory data-service layer (lib/data/services.ts)
-// AND the Postgres seed (prisma/seed.ts reads `profiles` + `properties` from
-// here). Keep IDs/emails stable so the listings (served from Neon in prisma
-// mode) line up with the accounts/billing the app reads from this layer.
+// AND the Postgres seed (prisma/seed.ts + prisma/seed-chat.ts read from here).
+// Keep IDs/emails stable so the Neon-backed slices line up with the
+// accounts/billing the app reads from this mock layer.
+//
+// Five real accounts only:
+//   • Maria Santos  — Premium + Admin (maria.santos@primeland.ph)
+//   • Rafael Cruz   — Premium broker  (rafael@cruzrealty.ph)
+//   • Lena Ocampo   — Basic           (lena.ocampo@gmail.com)
+//   • Sofia Andrada — Basic           (sofia.andrada@gmail.com)
+//   • Daniel Garcia — Basic           (daniel.garcia@gmail.com)
+// Login is email-only (the password field is ignored). Maria is the admin.
 
 // Real property photos via Unsplash (verified, commercial real-estate imagery).
 const img = (id: string) =>
@@ -46,17 +54,8 @@ const PDF = "https://www.africau.edu/images/default/sample.pdf";
 
 export const profiles: Profile[] = [
   {
-    id: "u-admin", email: "ops@worldchat.ph", username: "Carlos Mendoza",
-    plan: "premium", isAdmin: true,
-    defaultShowPrice: true, defaultShowAttachments: true,
-    code: "WC-OPS001", chatVisibility: "everyone", allowFriendRequests: true, active: true,
-    planInterval: "annual", planRenewsAt: "2027-06-30T15:59:59.000Z",
-    lastActiveAt: "2026-06-16T22:00:00.000Z",
-    verified: true, company: "WorldChat Operations", licenseNo: "SEC-0000001",
-  },
-  {
     id: "u-maria", email: "maria.santos@primeland.ph", username: "Maria Santos",
-    plan: "premium", isAdmin: false,
+    plan: "premium", isAdmin: true,
     defaultShowPrice: true, defaultShowAttachments: true,
     code: "WC-MSANT1", chatVisibility: "everyone", allowFriendRequests: true, active: true,
     planInterval: "annual", planRenewsAt: "2027-03-31T15:59:59.000Z",
@@ -73,46 +72,13 @@ export const profiles: Profile[] = [
     verified: true, company: "Cruz Realty & Co.", licenseNo: "PRC-0023456",
   },
   {
-    id: "u-bianca", email: "bianca.lim@metroestate.ph", username: "Bianca Lim",
-    plan: "premium", isAdmin: false,
-    defaultShowPrice: true, defaultShowAttachments: true,
-    code: "WC-BLIM03", chatVisibility: "invite_only", allowFriendRequests: true, active: true,
-    planInterval: "annual", planRenewsAt: "2027-01-31T15:59:59.000Z",
-    lastActiveAt: "2026-06-14T17:45:00.000Z",
-    verified: true, company: "Metro Estate Partners", licenseNo: "PRC-0034567",
-  },
-  {
-    id: "u-james", email: "james.reyes@reyesindustrial.ph", username: "James Reyes",
-    plan: "premium", isAdmin: false,
-    defaultShowPrice: true, defaultShowAttachments: false,
-    code: "WC-JREYE4", chatVisibility: "everyone", allowFriendRequests: true, active: true,
-    planInterval: "monthly", planRenewsAt: "2026-06-30T15:59:59.000Z",
-    lastActiveAt: "2026-06-15T19:10:00.000Z",
-    verified: true, company: "Reyes Industrial Holdings", licenseNo: "DTI-7788991",
-  },
-  {
-    id: "u-grace", email: "grace.tan@tanprop.ph", username: "Grace Tan",
-    plan: "premium", isAdmin: false,
-    defaultShowPrice: true, defaultShowAttachments: true,
-    code: "WC-GTAN05", chatVisibility: "everyone", allowFriendRequests: true, active: true,
-    planInterval: "monthly", planRenewsAt: "2026-06-30T15:59:59.000Z",
-    lastActiveAt: "2026-06-13T11:20:00.000Z",
-  },
-  {
-    id: "u-paolo", email: "paolo@vistacommercial.ph", username: "Paolo Villanueva",
-    plan: "premium", isAdmin: false,
-    defaultShowPrice: true, defaultShowAttachments: true,
-    code: "WC-PVILL6", chatVisibility: "invite_only", allowFriendRequests: true, active: true,
-    planInterval: "monthly", planRenewsAt: "2026-06-30T15:59:59.000Z",
-    lastActiveAt: "2026-06-12T09:00:00.000Z",
-  },
-  {
     id: "u-lena", email: "lena.ocampo@gmail.com", username: "Lena Ocampo",
     plan: "basic", isAdmin: false,
-    defaultShowPrice: false, defaultShowAttachments: true,
-    code: "WC-LOCA07", chatVisibility: "hidden", allowFriendRequests: false, active: true,
+    defaultShowPrice: true, defaultShowAttachments: true,
+    code: "WC-LOCA07", chatVisibility: "everyone", allowFriendRequests: true, active: true,
     planInterval: null, planRenewsAt: null,
-    lastActiveAt: "2026-05-28T00:00:00.000Z",
+    lastActiveAt: "2026-06-14T17:45:00.000Z",
+    verified: false, company: null, licenseNo: null,
   },
   {
     id: "u-sofia", email: "sofia.andrada@gmail.com", username: "Sofia Andrada",
@@ -121,6 +87,7 @@ export const profiles: Profile[] = [
     code: "WC-SAND08", chatVisibility: "everyone", allowFriendRequests: true, active: true,
     planInterval: null, planRenewsAt: null,
     lastActiveAt: "2026-06-15T14:00:00.000Z",
+    verified: false, company: null, licenseNo: null,
   },
   {
     id: "u-daniel", email: "daniel.garcia@gmail.com", username: "Daniel Garcia",
@@ -129,6 +96,7 @@ export const profiles: Profile[] = [
     code: "WC-DGAR09", chatVisibility: "everyone", allowFriendRequests: true, active: true,
     planInterval: null, planRenewsAt: null,
     lastActiveAt: "2026-06-16T16:30:00.000Z",
+    verified: false, company: null, licenseNo: null,
   },
 ];
 
@@ -233,7 +201,7 @@ export const properties: Property[] = [
     atsVisibility: "on_request", requiresLOI: true,
   },
   {
-    id: "p-7", ownerId: "u-bianca", ownerEmail: "bianca.lim@metroestate.ph",
+    id: "p-7", ownerId: "u-maria", ownerEmail: "maria.santos@primeland.ph",
     views: 110,
     title: "Alabang Corporate Office Unit",
     description:
@@ -248,23 +216,7 @@ export const properties: Property[] = [
     ats: null, atsVisibility: "hidden", requiresLOI: false,
   },
   {
-    id: "p-8", ownerId: "u-bianca", ownerEmail: "bianca.lim@metroestate.ph",
-    views: 95,
-    title: "Tagaytay Ridge Agricultural Estate",
-    description:
-      "2.5 hectares of titled agricultural land along the Tagaytay ridge with cool climate and lake views. Suited to agri-tourism, a private estate, or a boutique resort.",
-    price: 62_000_000, location: "Tagaytay, Cavite",
-    latitude: 14.1153, longitude: 120.962, type: "Agricultural",
-    tags: ["CleanTitle", "JoinVentures", "HasATS"],
-    createdAt: "2026-06-10T08:00:00.000Z",
-    photos: [img("1500382017468-9049fed747ef"), img("1574943320219-553eb213f72d")],
-    attachments: [{ id: "a-5", propertyId: "p-8", url: PDF, filename: "tagaytay-estate-title.pdf" }],
-    showPrice: true, showAttachments: true,
-    ats: { url: PDF, filename: "tagaytay-ats.pdf" },
-    atsVisibility: "document", requiresLOI: false,
-  },
-  {
-    id: "p-9", ownerId: "u-james", ownerEmail: "james.reyes@reyesindustrial.ph",
+    id: "p-9", ownerId: "u-rafael", ownerEmail: "rafael@cruzrealty.ph",
     views: 160,
     videoUrl: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4",
     floorPlans: ["https://picsum.photos/seed/fp-calamba-1/1000/700"],
@@ -282,22 +234,7 @@ export const properties: Property[] = [
     atsVisibility: "on_request", requiresLOI: true,
   },
   {
-    id: "p-10", ownerId: "u-james", ownerEmail: "james.reyes@reyesindustrial.ph",
-    views: 70,
-    title: "Meycauayan Industrial Warehouse",
-    description:
-      "Mid-size industrial warehouse in Meycauayan, Bulacan with mezzanine office and three-phase power. Close to NLEX for north-bound distribution. Sold as-is.",
-    price: 88_000_000, location: "Meycauayan, Bulacan",
-    latitude: 14.7361, longitude: 120.9558, type: "Warehouse",
-    tags: ["IndividualOwner", "AsIs", "LookingForBuyer"],
-    createdAt: "2026-06-07T10:40:00.000Z",
-    photos: [img("1553413077-190dd305871c"), img("1581094794329-c8112a89af12")],
-    attachments: [],
-    showPrice: true, showAttachments: true,
-    ats: null, atsVisibility: "hidden", requiresLOI: false,
-  },
-  {
-    id: "p-11", ownerId: "u-james", ownerEmail: "james.reyes@reyesindustrial.ph",
+    id: "p-11", ownerId: "u-maria", ownerEmail: "maria.santos@primeland.ph",
     views: 140,
     title: "EDSA Cubao Gas Station + Convenience Store",
     description:
@@ -313,22 +250,7 @@ export const properties: Property[] = [
     atsVisibility: "document", requiresLOI: false,
   },
   {
-    id: "p-12", ownerId: "u-grace", ownerEmail: "grace.tan@tanprop.ph",
-    views: 85,
-    title: "Cubao Commercial Retail Block",
-    description:
-      "Two-storey commercial retail block near Araneta City with strong pedestrian flow. Mix of retail and food tenants on flexible lease terms.",
-    price: 72_000_000, location: "Quezon City, Metro Manila",
-    latitude: 14.6196, longitude: 121.0524, type: "Retail",
-    tags: ["CompanyOwned", "JoinVentures", "LookingToSell"],
-    createdAt: "2026-06-08T12:00:00.000Z",
-    photos: [img("1581417478175-a9ef18f210c2"), img("1567958451986-2de427a4a0be")],
-    attachments: [],
-    showPrice: true, showAttachments: true,
-    ats: null, atsVisibility: "hidden", requiresLOI: false,
-  },
-  {
-    id: "p-13", ownerId: "u-grace", ownerEmail: "grace.tan@tanprop.ph",
+    id: "p-13", ownerId: "u-maria", ownerEmail: "maria.santos@primeland.ph",
     views: 120,
     tourUrl: "https://my.matterport.com/show/?m=SxQL3iGyoDo",
     floorPlans: ["https://picsum.photos/seed/fp-kapitolyo-1/1000/700", "https://picsum.photos/seed/fp-kapitolyo-2/1000/700"],
@@ -344,21 +266,6 @@ export const properties: Property[] = [
     showPrice: true, showAttachments: true,
     ats: { url: PDF, filename: "kapitolyo-ats.pdf" },
     atsVisibility: "on_request", requiresLOI: false,
-  },
-  {
-    id: "p-14", ownerId: "u-paolo", ownerEmail: "paolo@vistacommercial.ph",
-    views: 60,
-    title: "Subic Bay Freeport Warehouse",
-    description:
-      "Freeport-zone warehouse in Subic Bay with deep-water port proximity and duty-free advantages. Suited to import/export and light assembly operations.",
-    price: 96_000_000, location: "Subic, Zambales",
-    latitude: 14.7886, longitude: 120.284, type: "Warehouse",
-    tags: ["CompanyOwned", "CleanTitle", "LookingForBuyer"],
-    createdAt: "2026-06-13T11:00:00.000Z",
-    photos: [img("1601581875309-fafbf2d3ed3a"), img("1586528116311-ad8dd3c8310d")],
-    attachments: [],
-    showPrice: true, showAttachments: true,
-    ats: null, atsVisibility: "hidden", requiresLOI: false,
   },
   {
     id: "p-15", ownerId: "u-lena", ownerEmail: "lena.ocampo@gmail.com",
@@ -409,13 +316,13 @@ export const properties: Property[] = [
 
 export const chatGroups: ChatGroup[] = [
   { id: "g-1", name: "Metro Manila Deals", createdByEmail: "maria.santos@primeland.ph" },
-  { id: "g-2", name: "Industrial & Warehousing", createdByEmail: "james.reyes@reyesindustrial.ph" },
+  { id: "g-2", name: "Industrial & Warehousing", createdByEmail: "rafael@cruzrealty.ph" },
   { id: "g-3", name: "First-time Buyers", createdByEmail: "sofia.andrada@gmail.com" },
 ];
 
 export const groupMembers: Record<string, string[]> = {
-  "g-1": ["u-maria", "u-rafael", "u-bianca", "u-grace"],
-  "g-2": ["u-james", "u-paolo", "u-rafael", "u-admin"],
+  "g-1": ["u-maria", "u-rafael", "u-daniel"],
+  "g-2": ["u-rafael", "u-maria", "u-daniel"],
   "g-3": ["u-sofia", "u-daniel", "u-lena"],
 };
 
@@ -423,14 +330,14 @@ export const messages: Message[] = [
   { id: "m-1", groupId: "g-1", userId: "u-maria", userEmail: "maria.santos@primeland.ph",
     content: "Just listed the Makati CBD office floor — serious buyers only please.",
     contentType: "text", createdAt: "2026-06-14T09:31:00.000Z" },
-  { id: "m-2", groupId: "g-1", userId: "u-grace", userEmail: "grace.tan@tanprop.ph",
+  { id: "m-2", groupId: "g-1", userId: "u-rafael", userEmail: "rafael@cruzrealty.ph",
     content: "Beautiful. I have a client looking in that range — sending a DM.",
     contentType: "text", createdAt: "2026-06-14T09:40:00.000Z" },
-  { id: "m-3", groupId: "g-2", userId: "u-james", userEmail: "james.reyes@reyesindustrial.ph",
+  { id: "m-3", groupId: "g-2", userId: "u-rafael", userEmail: "rafael@cruzrealty.ph",
     content: "Calamba warehouse viewing this Friday, who's in?",
     contentType: "text", createdAt: "2026-06-15T13:00:00.000Z" },
-  { id: "m-4", groupId: "g-2", userId: "u-paolo", userEmail: "paolo@vistacommercial.ph",
-    content: "I'll join. Also have a Subic freeport unit if anyone's interested.",
+  { id: "m-4", groupId: "g-2", userId: "u-daniel", userEmail: "daniel.garcia@gmail.com",
+    content: "I'll join — representing a logistics group looking for 10,000 sqm.",
     contentType: "text", createdAt: "2026-06-15T13:12:00.000Z" },
   { id: "m-5", groupId: "g-3", userId: "u-daniel", userEmail: "daniel.garcia@gmail.com",
     content: "New here — looking for a small retail lot under 20M around Rizal. Tips welcome!",
@@ -438,7 +345,7 @@ export const messages: Message[] = [
 ];
 
 export const worldMessages: WorldMessage[] = [
-  { id: "w-1", userId: "u-james", userEmail: "james.reyes@reyesindustrial.ph",
+  { id: "w-1", userId: "u-rafael", userEmail: "rafael@cruzrealty.ph",
     content: "Good morning everyone! Any new industrial listings up north this week?",
     contentType: "text", createdAt: "2026-06-16T01:00:00.000Z" },
   { id: "w-2", userId: "u-maria", userEmail: "maria.santos@primeland.ph",
@@ -450,8 +357,8 @@ export const worldMessages: WorldMessage[] = [
 ];
 
 export const directThreads: DirectThread[] = [
-  { id: "dt-1", participantIds: ["u-maria", "u-grace"],
-    participantEmails: ["maria.santos@primeland.ph", "grace.tan@tanprop.ph"],
+  { id: "dt-1", participantIds: ["u-maria", "u-rafael"],
+    participantEmails: ["maria.santos@primeland.ph", "rafael@cruzrealty.ph"],
     createdAt: "2026-06-14T10:00:00.000Z" },
   { id: "dt-2", participantIds: ["u-daniel", "u-sofia"],
     participantEmails: ["daniel.garcia@gmail.com", "sofia.andrada@gmail.com"],
@@ -459,7 +366,7 @@ export const directThreads: DirectThread[] = [
 ];
 
 export const directMessages: DirectMessage[] = [
-  { id: "dm-1", threadId: "dt-1", senderId: "u-grace", senderEmail: "grace.tan@tanprop.ph",
+  { id: "dm-1", threadId: "dt-1", senderId: "u-rafael", senderEmail: "rafael@cruzrealty.ph",
     content: "Hi Maria — is the Makati floor still available? I have a buyer.",
     contentType: "text", createdAt: "2026-06-14T10:01:00.000Z" },
   { id: "dm-2", threadId: "dt-1", senderId: "u-maria", senderEmail: "maria.santos@primeland.ph",
@@ -474,40 +381,18 @@ export const payments: Payment[] = [
   { id: "pay-1", userId: "u-maria", plan: "premium", interval: "annual",
     reference: "GCASH-640881", attachmentUrl: proof("proof-maria"), status: "approved",
     createdAt: "2026-03-30T03:00:00.000Z", periodStart: "2026-04-01T00:00:00.000Z", periodEnd: "2027-03-31T15:59:59.000Z",
-    reviewedAt: "2026-03-31T02:00:00.000Z", reviewedBy: "ops@worldchat.ph", invoiceId: "inv-1" },
+    reviewedAt: "2026-03-31T02:00:00.000Z", reviewedBy: "maria.santos@primeland.ph", invoiceId: "inv-1" },
   { id: "pay-2", userId: "u-rafael", plan: "premium", interval: "annual",
     reference: "BPI-77120934", attachmentUrl: proof("proof-rafael"), status: "approved",
     createdAt: "2025-12-29T05:00:00.000Z", periodStart: "2026-01-01T00:00:00.000Z", periodEnd: "2026-12-31T15:59:59.000Z",
-    reviewedAt: "2025-12-30T04:00:00.000Z", reviewedBy: "ops@worldchat.ph", invoiceId: "inv-2" },
-  { id: "pay-3", userId: "u-bianca", plan: "premium", interval: "annual",
-    reference: "GCASH-559013", attachmentUrl: proof("proof-bianca"), status: "approved",
-    createdAt: "2026-01-29T06:00:00.000Z", periodStart: "2026-02-01T00:00:00.000Z", periodEnd: "2027-01-31T15:59:59.000Z",
-    reviewedAt: "2026-01-31T02:00:00.000Z", reviewedBy: "ops@worldchat.ph", invoiceId: "inv-3" },
-  { id: "pay-4", userId: "u-james", plan: "premium", interval: "monthly",
-    reference: "GCASH-882134", attachmentUrl: proof("proof-james-may"), status: "approved",
-    createdAt: "2026-04-30T07:00:00.000Z", periodStart: "2026-05-01T00:00:00.000Z", periodEnd: "2026-05-31T15:59:59.000Z",
-    reviewedAt: "2026-05-01T02:00:00.000Z", reviewedBy: "ops@worldchat.ph", invoiceId: "inv-4" },
-  { id: "pay-5", userId: "u-grace", plan: "premium", interval: "monthly",
-    reference: "GCASH-771902", attachmentUrl: proof("proof-grace-may"), status: "approved",
-    createdAt: "2026-04-30T08:30:00.000Z", periodStart: "2026-05-01T00:00:00.000Z", periodEnd: "2026-05-31T15:59:59.000Z",
-    reviewedAt: "2026-05-01T03:00:00.000Z", reviewedBy: "ops@worldchat.ph", invoiceId: "inv-5" },
-  { id: "pay-6", userId: "u-paolo", plan: "premium", interval: "monthly",
-    reference: "MAYA-330417", attachmentUrl: proof("proof-paolo-may"), status: "approved",
-    createdAt: "2026-04-29T09:00:00.000Z", periodStart: "2026-05-01T00:00:00.000Z", periodEnd: "2026-05-31T15:59:59.000Z",
-    reviewedAt: "2026-05-01T04:00:00.000Z", reviewedBy: "ops@worldchat.ph", invoiceId: "inv-6" },
-  { id: "pay-7", userId: "u-james", plan: "premium", interval: "monthly",
-    reference: "GCASH-905662", attachmentUrl: proof("proof-james-jun"), status: "pending",
-    createdAt: "2026-06-14T07:00:00.000Z", periodStart: "2026-06-01T00:00:00.000Z", periodEnd: "2026-06-30T15:59:59.000Z" },
-  { id: "pay-8", userId: "u-grace", plan: "premium", interval: "monthly",
-    reference: "GCASH-918044", attachmentUrl: proof("proof-grace-jun"), status: "pending",
-    createdAt: "2026-06-15T05:30:00.000Z", periodStart: "2026-06-01T00:00:00.000Z", periodEnd: "2026-06-30T15:59:59.000Z" },
-  { id: "pay-9", userId: "u-sofia", plan: "premium", interval: "monthly",
+    reviewedAt: "2025-12-30T04:00:00.000Z", reviewedBy: "maria.santos@primeland.ph", invoiceId: "inv-2" },
+  { id: "pay-3", userId: "u-sofia", plan: "premium", interval: "monthly",
     reference: "GCASH-923771", attachmentUrl: proof("proof-sofia-upgrade"), status: "pending",
     createdAt: "2026-06-16T11:00:00.000Z", periodStart: "2026-07-01T00:00:00.000Z", periodEnd: "2026-07-31T15:59:59.000Z" },
-  { id: "pay-10", userId: "u-daniel", plan: "premium", interval: "monthly",
+  { id: "pay-4", userId: "u-daniel", plan: "premium", interval: "monthly",
     reference: "GCASH-000931", attachmentUrl: proof("proof-daniel"), status: "rejected",
     createdAt: "2026-06-12T10:00:00.000Z", periodStart: "2026-06-01T00:00:00.000Z", periodEnd: "2026-06-30T15:59:59.000Z",
-    reviewedAt: "2026-06-12T12:30:00.000Z", reviewedBy: "ops@worldchat.ph" },
+    reviewedAt: "2026-06-12T12:30:00.000Z", reviewedBy: "maria.santos@primeland.ph" },
 ];
 
 export const invoices: Invoice[] = [
@@ -515,32 +400,12 @@ export const invoices: Invoice[] = [
     plan: "premium", interval: "annual", amount: 5760,
     periodStart: "2026-04-01T00:00:00.000Z", periodEnd: "2027-03-31T15:59:59.000Z", dueDate: "2026-03-31T15:59:59.000Z",
     status: "paid", paymentId: "pay-1", proofUrl: proof("proof-maria"), reference: "GCASH-640881",
-    issuedAt: "2026-03-31T02:00:00.000Z", issuedBy: "ops@worldchat.ph" },
+    issuedAt: "2026-03-31T02:00:00.000Z", issuedBy: "maria.santos@primeland.ph" },
   { id: "inv-2", number: "INV-2026-0002", userId: "u-rafael", userEmail: "rafael@cruzrealty.ph",
     plan: "premium", interval: "annual", amount: 5760,
     periodStart: "2026-01-01T00:00:00.000Z", periodEnd: "2026-12-31T15:59:59.000Z", dueDate: "2025-12-31T15:59:59.000Z",
     status: "paid", paymentId: "pay-2", proofUrl: proof("proof-rafael"), reference: "BPI-77120934",
-    issuedAt: "2025-12-30T04:00:00.000Z", issuedBy: "ops@worldchat.ph" },
-  { id: "inv-3", number: "INV-2026-0003", userId: "u-bianca", userEmail: "bianca.lim@metroestate.ph",
-    plan: "premium", interval: "annual", amount: 5760,
-    periodStart: "2026-02-01T00:00:00.000Z", periodEnd: "2027-01-31T15:59:59.000Z", dueDate: "2026-01-31T15:59:59.000Z",
-    status: "paid", paymentId: "pay-3", proofUrl: proof("proof-bianca"), reference: "GCASH-559013",
-    issuedAt: "2026-01-31T02:00:00.000Z", issuedBy: "ops@worldchat.ph" },
-  { id: "inv-4", number: "INV-2026-0004", userId: "u-james", userEmail: "james.reyes@reyesindustrial.ph",
-    plan: "premium", interval: "monthly", amount: 600,
-    periodStart: "2026-05-01T00:00:00.000Z", periodEnd: "2026-05-31T15:59:59.000Z", dueDate: "2026-05-31T15:59:59.000Z",
-    status: "paid", paymentId: "pay-4", proofUrl: proof("proof-james-may"), reference: "GCASH-882134",
-    issuedAt: "2026-05-01T02:00:00.000Z", issuedBy: "ops@worldchat.ph" },
-  { id: "inv-5", number: "INV-2026-0005", userId: "u-grace", userEmail: "grace.tan@tanprop.ph",
-    plan: "premium", interval: "monthly", amount: 600,
-    periodStart: "2026-05-01T00:00:00.000Z", periodEnd: "2026-05-31T15:59:59.000Z", dueDate: "2026-05-31T15:59:59.000Z",
-    status: "paid", paymentId: "pay-5", proofUrl: proof("proof-grace-may"), reference: "GCASH-771902",
-    issuedAt: "2026-05-01T03:00:00.000Z", issuedBy: "ops@worldchat.ph" },
-  { id: "inv-6", number: "INV-2026-0006", userId: "u-paolo", userEmail: "paolo@vistacommercial.ph",
-    plan: "premium", interval: "monthly", amount: 600,
-    periodStart: "2026-05-01T00:00:00.000Z", periodEnd: "2026-05-31T15:59:59.000Z", dueDate: "2026-05-31T15:59:59.000Z",
-    status: "paid", paymentId: "pay-6", proofUrl: proof("proof-paolo-may"), reference: "MAYA-330417",
-    issuedAt: "2026-05-01T04:00:00.000Z", issuedBy: "ops@worldchat.ph" },
+    issuedAt: "2025-12-30T04:00:00.000Z", issuedBy: "maria.santos@primeland.ph" },
 ];
 
 export const settings: AppSetting[] = [
@@ -553,7 +418,7 @@ export const propertyRequests: PropertyRequest[] = [
   { id: "pr-1", propertyId: "p-9", propertyTitle: "Calamba Logistics Warehouse (10,000 sqm)",
     kind: "ats", requesterId: "u-daniel", requesterName: "Daniel Garcia",
     requesterEmail: "daniel.garcia@gmail.com", requesterCode: "WC-DGAR09",
-    ownerId: "u-james", ownerEmail: "james.reyes@reyesindustrial.ph",
+    ownerId: "u-rafael", ownerEmail: "rafael@cruzrealty.ph",
     message: "Representing a logistics group ready to proceed — Letter of Intent attached.",
     loiFilename: "garcia-letter-of-intent.pdf", status: "pending", createdAt: "2026-06-16T08:00:00.000Z" },
   { id: "pr-2", propertyId: "p-1", propertyTitle: "Premium Makati CBD Office Floor",
@@ -562,67 +427,61 @@ export const propertyRequests: PropertyRequest[] = [
     ownerId: "u-maria", ownerEmail: "maria.santos@primeland.ph",
     message: "Could I get access to the building brochure and floor plans? Thank you!",
     status: "pending", createdAt: "2026-06-16T10:30:00.000Z" },
-  { id: "pr-3", propertyId: "p-13", propertyTitle: "Kapitolyo Mixed-Use Building",
-    kind: "ats", requesterId: "u-rafael", requesterName: "Rafael Cruz",
-    requesterEmail: "rafael@cruzrealty.ph", requesterCode: "WC-RCRUZ2",
-    ownerId: "u-grace", ownerEmail: "grace.tan@tanprop.ph",
-    message: "Strong buyer interest from a client of mine — requesting the ATS to proceed.",
-    status: "approved", atsProvidedFilename: "kapitolyo-ats.pdf", leadId: "lead-13", createdAt: "2026-06-13T14:00:00.000Z" },
+  { id: "pr-3", propertyId: "p-9", propertyTitle: "Calamba Logistics Warehouse (10,000 sqm)",
+    kind: "ats", requesterId: "u-daniel", requesterName: "Daniel Garcia",
+    requesterEmail: "daniel.garcia@gmail.com", requesterCode: "WC-DGAR09",
+    ownerId: "u-rafael", ownerEmail: "rafael@cruzrealty.ph",
+    message: "Following up — strong buyer interest, requesting the ATS to proceed.",
+    status: "approved", atsProvidedFilename: "calamba-ats.pdf", leadId: "lead-8", createdAt: "2026-06-13T14:00:00.000Z" },
 ];
 
 export const requestMessages: RequestMessage[] = [
   { id: "rm-1", requestId: "pr-1", senderId: "u-daniel", senderEmail: "daniel.garcia@gmail.com",
-    content: "Hi James, we're very interested in the Calamba warehouse. LOI attached — open to a viewing this week.",
+    content: "Hi Rafael, we're very interested in the Calamba warehouse. LOI attached — open to a viewing this week.",
     contentType: "text", createdAt: "2026-06-16T08:01:00.000Z" },
-  { id: "rm-2", requestId: "pr-1", senderId: "u-james", senderEmail: "james.reyes@reyesindustrial.ph",
+  { id: "rm-2", requestId: "pr-1", senderId: "u-rafael", senderEmail: "rafael@cruzrealty.ph",
     content: "Thanks Daniel — reviewing your LOI now, will share the ATS shortly.",
     contentType: "text", createdAt: "2026-06-16T08:45:00.000Z" },
-  { id: "rm-3", requestId: "pr-3", senderId: "u-grace", senderEmail: "grace.tan@tanprop.ph",
+  { id: "rm-3", requestId: "pr-3", senderId: "u-rafael", senderEmail: "rafael@cruzrealty.ph",
     content: "Approved — here's the Authority to Sell. Let's set up a call with your client.",
     contentType: "text", createdAt: "2026-06-13T15:10:00.000Z" },
 ];
 
 export const notifications: AppNotification[] = [
-  { id: "ntf-1", userId: "u-admin", type: "payment_submitted", title: "New payment submitted",
-    body: "James Reyes submitted a Premium (monthly) payment — ref GCASH-905662.",
-    link: "/admin", read: false, createdAt: "2026-06-14T07:00:00.000Z" },
-  { id: "ntf-2", userId: "u-admin", type: "payment_submitted", title: "New payment submitted",
-    body: "Grace Tan submitted a Premium (monthly) payment — ref GCASH-918044.",
-    link: "/admin", read: false, createdAt: "2026-06-15T05:30:00.000Z" },
-  { id: "ntf-3", userId: "u-admin", type: "payment_submitted", title: "Upgrade payment submitted",
+  { id: "ntf-1", userId: "u-maria", type: "payment_submitted", title: "New payment submitted",
     body: "Sofia Andrada submitted a Premium (monthly) upgrade — ref GCASH-923771.",
     link: "/admin", read: false, createdAt: "2026-06-16T11:00:00.000Z" },
-  { id: "ntf-4", userId: "u-james", type: "request_new", title: "New ATS request",
+  { id: "ntf-2", userId: "u-rafael", type: "request_new", title: "New ATS request",
     body: "Daniel Garcia requested the ATS for Calamba Logistics Warehouse (LOI attached).",
     link: "/requests?open=pr-1", requestId: "pr-1", requestKind: "ats", read: false, createdAt: "2026-06-16T08:00:00.000Z" },
-  { id: "ntf-5", userId: "u-maria", type: "request_new", title: "New document request",
+  { id: "ntf-3", userId: "u-maria", type: "request_new", title: "New document request",
     body: "Sofia Andrada requested documents for Premium Makati CBD Office Floor.",
     link: "/requests?open=pr-2", requestId: "pr-2", requestKind: "documents", read: false, createdAt: "2026-06-16T10:30:00.000Z" },
-  { id: "ntf-6", userId: "u-maria", type: "invoice_issued", title: "Invoice ready",
+  { id: "ntf-4", userId: "u-maria", type: "invoice_issued", title: "Invoice ready",
     body: "Your Premium (annual) invoice INV-2026-0001 is ready to download.",
     link: "/subscription", read: true, createdAt: "2026-03-31T02:00:00.000Z" },
-  { id: "ntf-7", userId: "u-daniel", type: "admin_notice", title: "Payment not accepted",
+  { id: "ntf-5", userId: "u-daniel", type: "admin_notice", title: "Payment not accepted",
     body: "Your payment proof (ref GCASH-000931) was unclear. Please re-submit a readable screenshot.",
     link: "/subscription", read: false, createdAt: "2026-06-12T12:30:00.000Z" },
 ];
 
 export const friendRequests: FriendRequest[] = [
-  { id: "fr-1", fromId: "u-daniel", fromEmail: "daniel.garcia@gmail.com",
+  { id: "fr-1", fromId: "u-rafael", fromEmail: "rafael@cruzrealty.ph",
+    toId: "u-maria", toEmail: "maria.santos@primeland.ph", status: "accepted", createdAt: "2026-06-10T09:00:00.000Z" },
+  { id: "fr-2", fromId: "u-daniel", fromEmail: "daniel.garcia@gmail.com",
+    toId: "u-sofia", toEmail: "sofia.andrada@gmail.com", status: "accepted", createdAt: "2026-06-16T15:25:00.000Z" },
+  { id: "fr-3", fromId: "u-daniel", fromEmail: "daniel.garcia@gmail.com",
     toId: "u-maria", toEmail: "maria.santos@primeland.ph", status: "pending", createdAt: "2026-06-16T09:00:00.000Z" },
-  { id: "fr-2", fromId: "u-james", fromEmail: "james.reyes@reyesindustrial.ph",
-    toId: "u-rafael", toEmail: "rafael@cruzrealty.ph", status: "accepted", createdAt: "2026-06-10T09:00:00.000Z" },
-  { id: "fr-3", fromId: "u-sofia", fromEmail: "sofia.andrada@gmail.com",
-    toId: "u-grace", toEmail: "grace.tan@tanprop.ph", status: "pending", createdAt: "2026-06-16T14:20:00.000Z" },
+  { id: "fr-4", fromId: "u-sofia", fromEmail: "sofia.andrada@gmail.com",
+    toId: "u-rafael", toEmail: "rafael@cruzrealty.ph", status: "pending", createdAt: "2026-06-16T14:20:00.000Z" },
 ];
 
 export const auditLogs: AuditLog[] = [
-  { id: "log-1", adminId: "u-admin", adminEmail: "ops@worldchat.ph", action: "Approved payment",
-    target: "maria.santos@primeland.ph", detail: "Premium (annual) activated · ref GCASH-640881", createdAt: "2026-03-31T02:00:00.000Z" },
-  { id: "log-2", adminId: "u-admin", adminEmail: "ops@worldchat.ph", action: "Approved payment",
-    target: "james.reyes@reyesindustrial.ph", detail: "Premium (monthly) activated · ref GCASH-882134", createdAt: "2026-05-01T02:00:00.000Z" },
-  { id: "log-3", adminId: "u-admin", adminEmail: "ops@worldchat.ph", action: "Rejected payment",
+  { id: "log-1", adminId: "u-maria", adminEmail: "maria.santos@primeland.ph", action: "Approved payment",
+    target: "rafael@cruzrealty.ph", detail: "Premium (annual) activated · ref BPI-77120934", createdAt: "2025-12-30T04:00:00.000Z" },
+  { id: "log-2", adminId: "u-maria", adminEmail: "maria.santos@primeland.ph", action: "Rejected payment",
     target: "daniel.garcia@gmail.com", detail: "Proof unreadable · ref GCASH-000931", createdAt: "2026-06-12T12:30:00.000Z" },
-  { id: "log-4", adminId: "u-admin", adminEmail: "ops@worldchat.ph", action: "Resolved ticket",
+  { id: "log-3", adminId: "u-maria", adminEmail: "maria.santos@primeland.ph", action: "Resolved ticket",
     target: "sofia.andrada@gmail.com", detail: "TKT-1002 · password reset guidance", createdAt: "2026-06-12T08:15:00.000Z" },
 ];
 
@@ -644,19 +503,19 @@ export const supportTickets: SupportTicket[] = [
     message: "I forgot my password and can't find the reset option.",
     status: "resolved", createdAt: "2026-06-12T06:00:00.000Z", updatedAt: "2026-06-12T08:15:00.000Z",
     replies: [
-      { id: "trp-1", ticketId: "tkt-4", fromEmail: "ops@worldchat.ph", isAdmin: true,
+      { id: "trp-1", ticketId: "tkt-4", fromEmail: "maria.santos@primeland.ph", isAdmin: true,
         body: "Hi Sofia — I've reset your password and sent a temporary one. Marking this resolved!",
         createdAt: "2026-06-12T08:15:00.000Z" },
     ] },
 ];
 
 export const aiRequests: AiRequest[] = [
-  { id: "air-1", number: "AIR-1002", userId: "u-james", userEmail: "james.reyes@reyesindustrial.ph",
+  { id: "air-1", number: "AIR-1002", userId: "u-rafael", userEmail: "rafael@cruzrealty.ph",
     type: "analysis", price: 100,
-    description: "Please assess the title status, zoning, and resale potential of the Meycauayan warehouse lot.",
-    documents: [{ filename: "meycauayan-title.pdf", url: PDF }],
-    proofUrl: proof("ai-proof-james"), status: "pending", resultDocuments: [],
-    createdAt: "2026-06-15T03:00:00.000Z", updatedAt: "2026-06-15T03:00:00.000Z" },
+    description: "Analyze the Clark logistics hub for lease-vs-sell potential and current market rate.",
+    documents: [{ filename: "clark-logistics-flyer.pdf", url: PDF }],
+    proofUrl: proof("ai-proof-rafael"), status: "pending", resultDocuments: [],
+    createdAt: "2026-06-16T06:00:00.000Z", updatedAt: "2026-06-16T06:00:00.000Z" },
   { id: "air-2", number: "AIR-1001", userId: "u-maria", userEmail: "maria.santos@primeland.ph",
     type: "comparison", price: 300,
     description: "Compare price per sqm, location access, and clean-title status across these two office assets.",
@@ -664,13 +523,13 @@ export const aiRequests: AiRequest[] = [
     proofUrl: proof("ai-proof-maria"), status: "completed",
     adminNotes: "Side-by-side comparison attached. Makati commands a premium per sqm; Cebu offers stronger yield.",
     resultDocuments: [{ filename: "WorldChat-Comparison-Report.pdf", url: PDF }],
-    reviewedBy: "ops@worldchat.ph", createdAt: "2026-06-11T01:00:00.000Z", updatedAt: "2026-06-12T05:00:00.000Z" },
-  { id: "air-3", number: "AIR-1003", userId: "u-rafael", userEmail: "rafael@cruzrealty.ph",
+    reviewedBy: "maria.santos@primeland.ph", createdAt: "2026-06-11T01:00:00.000Z", updatedAt: "2026-06-12T05:00:00.000Z" },
+  { id: "air-3", number: "AIR-1003", userId: "u-daniel", userEmail: "daniel.garcia@gmail.com",
     type: "analysis", price: 100,
-    description: "Analyze the Clark logistics hub for lease-vs-sell potential and current market rate.",
-    documents: [{ filename: "clark-logistics-flyer.pdf", url: PDF }],
-    proofUrl: proof("ai-proof-rafael"), status: "pending", resultDocuments: [],
-    createdAt: "2026-06-16T06:00:00.000Z", updatedAt: "2026-06-16T06:00:00.000Z" },
+    description: "Please assess the title status and resale potential of the Antipolo roadside retail lot.",
+    documents: [{ filename: "antipolo-lot-title.pdf", url: PDF }],
+    proofUrl: proof("ai-proof-daniel"), status: "pending", resultDocuments: [],
+    createdAt: "2026-06-16T07:00:00.000Z", updatedAt: "2026-06-16T07:00:00.000Z" },
 ];
 
 // ─── Leads Board: pipeline stages (Kanban columns) ──────────────
@@ -750,66 +609,13 @@ export const leads: Lead[] = [
     sourceId: "lsrc-referral", typeId: "lt-investor", stageId: "ls-lost", status: "lost",
     expectedCloseDate: "2026-06-12", closedAt: "2026-06-12T08:00:00.000Z", lostReason: "Budget didn't clear; chose a competitor site near the airport.",
     createdAt: "2026-05-22T09:00:00.000Z", updatedAt: "2026-06-12T08:00:00.000Z" },
-  // ── Bianca Lim ──
-  { id: "lead-8", ownerId: "u-bianca", ownerEmail: "bianca.lim@metroestate.ph",
-    title: "Alabang office — scale-up buyer", description: "Fast-growing fintech buying its first owned office.",
-    value: 58_000_000, contactName: "Paywave Inc.", contactEmail: "admin@paywave.example", contactPhone: "+63 928 551 3320",
-    propertyId: "p-7", propertyTitle: "Alabang Corporate Office Unit",
-    sourceId: "lsrc-marketplace", typeId: "lt-buyer", stageId: "ls-negotiation", status: "open",
-    expectedCloseDate: "2026-07-20", closedAt: null, lostReason: null,
-    createdAt: "2026-06-06T09:00:00.000Z", updatedAt: "2026-06-15T09:00:00.000Z" },
-  { id: "lead-9", ownerId: "u-bianca", ownerEmail: "bianca.lim@metroestate.ph",
-    title: "Tagaytay estate — resort investor", description: "Boutique-resort group evaluating the ridge estate.",
-    value: 62_000_000, contactName: "Hillview Resorts", contactEmail: "dev@hillview.example", contactPhone: "+63 917 998 2231",
-    propertyId: "p-8", propertyTitle: "Tagaytay Ridge Agricultural Estate",
-    sourceId: "lsrc-referral", typeId: "lt-investor", stageId: "ls-contacted", status: "open",
-    expectedCloseDate: "2026-08-10", closedAt: null, lostReason: null,
-    createdAt: "2026-06-11T09:00:00.000Z", updatedAt: "2026-06-14T09:00:00.000Z" },
-  // ── James Reyes ──
-  { id: "lead-10", ownerId: "u-james", ownerEmail: "james.reyes@reyesindustrial.ph",
-    title: "Calamba warehouse — Garcia (LOI in)", description: "Logistics group submitted an LOI via World Chat; ATS requested.",
+  { id: "lead-8", ownerId: "u-rafael", ownerEmail: "rafael@cruzrealty.ph",
+    title: "Calamba warehouse — Garcia (LOI in)", description: "Logistics group submitted an LOI via World Chat; ATS provided.",
     value: 120_000_000, contactName: "Daniel Garcia", contactEmail: "daniel.garcia@gmail.com", contactPhone: "+63 917 333 1200",
     propertyId: "p-9", propertyTitle: "Calamba Logistics Warehouse (10,000 sqm)",
     sourceId: "lsrc-worldchat", typeId: "lt-buyer", stageId: "ls-negotiation", status: "open",
     expectedCloseDate: "2026-07-10", closedAt: null, lostReason: null,
-    createdAt: "2026-06-12T09:00:00.000Z", updatedAt: "2026-06-16T09:00:00.000Z" },
-  { id: "lead-11", ownerId: "u-james", ownerEmail: "james.reyes@reyesindustrial.ph",
-    title: "Meycauayan — manufacturer", description: "Plastics manufacturer needs a north-Luzon plant; early talks.",
-    value: 88_000_000, contactName: "Polyform Mfg.", contactEmail: "plant@polyform.example", contactPhone: "+63 919 224 5567",
-    propertyId: "p-10", propertyTitle: "Meycauayan Industrial Warehouse",
-    sourceId: "lsrc-phone", typeId: "lt-buyer", stageId: "ls-new", status: "open",
-    expectedCloseDate: "2026-09-15", closedAt: null, lostReason: null,
-    createdAt: "2026-05-27T09:00:00.000Z", updatedAt: "2026-05-28T09:00:00.000Z" },
-  { id: "lead-12", ownerId: "u-james", ownerEmail: "james.reyes@reyesindustrial.ph",
-    title: "EDSA station — closed", description: "Operator bought the station and store; turnover scheduled.",
-    value: 105_000_000, contactName: "FuelCo Retail", contactEmail: "acq@fuelco.example", contactPhone: "+63 917 770 9981",
-    propertyId: "p-11", propertyTitle: "EDSA Cubao Gas Station + Convenience Store",
-    sourceId: "lsrc-marketplace", typeId: "lt-buyer", stageId: "ls-won", status: "won",
-    expectedCloseDate: "2026-06-08", closedAt: "2026-06-08T08:00:00.000Z", lostReason: null,
-    createdAt: "2026-05-18T09:00:00.000Z", updatedAt: "2026-06-08T08:00:00.000Z" },
-  // ── Grace Tan ──
-  { id: "lead-13", ownerId: "u-grace", ownerEmail: "grace.tan@tanprop.ph",
-    title: "Kapitolyo building — Cruz client", description: "Referred by Rafael Cruz; investor wants the rent roll and ATS.",
-    value: 135_000_000, contactName: "Rafael Cruz (broker)", contactEmail: "rafael@cruzrealty.ph", contactPhone: "+63 917 201 7788",
-    propertyId: "p-13", propertyTitle: "Kapitolyo Mixed-Use Building",
-    sourceId: "lsrc-referral", typeId: "lt-investor", stageId: "ls-viewing", status: "open",
-    expectedCloseDate: "2026-07-25", closedAt: null, lostReason: null,
-    createdAt: "2026-06-13T09:00:00.000Z", updatedAt: "2026-06-15T09:00:00.000Z" },
-  { id: "lead-14", ownerId: "u-grace", ownerEmail: "grace.tan@tanprop.ph",
-    title: "Cubao retail — F&B chain", description: "Coffee chain wants two ground-floor units on a 6-year lease.",
-    value: 72_000_000, contactName: "BrewHaus PH", contactEmail: "expansion@brewhaus.example", contactPhone: "+63 921 556 1144",
-    propertyId: "p-12", propertyTitle: "Cubao Commercial Retail Block",
-    sourceId: "lsrc-marketplace", typeId: "lt-tenant", stageId: "ls-contacted", status: "open",
-    expectedCloseDate: "2026-08-05", closedAt: null, lostReason: null,
-    createdAt: "2026-06-09T09:00:00.000Z", updatedAt: "2026-06-13T09:00:00.000Z" },
-  // ── Paolo Villanueva ──
-  { id: "lead-15", ownerId: "u-paolo", ownerEmail: "paolo@vistacommercial.ph",
-    title: "Subic warehouse — exporter", description: "Furniture exporter wants freeport duty advantages; walked in.",
-    value: 96_000_000, contactName: "Isla Exports", contactEmail: "logistics@islaexports.example", contactPhone: "+63 917 884 2256",
-    propertyId: "p-14", propertyTitle: "Subic Bay Freeport Warehouse",
-    sourceId: "lsrc-walkin", typeId: "lt-buyer", stageId: "ls-new", status: "open",
-    expectedCloseDate: "2026-09-01", closedAt: null, lostReason: null,
-    createdAt: "2026-06-13T09:00:00.000Z", updatedAt: "2026-06-14T09:00:00.000Z" },
+    createdAt: "2026-06-13T09:00:00.000Z", updatedAt: "2026-06-16T09:00:00.000Z" },
 ];
 
 // ─── Favorites / saved listings ─────────────────────────────────
@@ -819,7 +625,7 @@ export const favorites: Favorite[] = [
   { id: "fav-3", userId: "u-daniel", propertyId: "p-16", createdAt: "2026-06-16T16:35:00.000Z" },
   { id: "fav-4", userId: "u-sofia",  propertyId: "p-3",  createdAt: "2026-06-15T13:10:00.000Z" },
   { id: "fav-5", userId: "u-sofia",  propertyId: "p-13", createdAt: "2026-06-15T14:05:00.000Z" },
-  { id: "fav-6", userId: "u-lena",   propertyId: "p-8",  createdAt: "2026-05-28T01:00:00.000Z" },
+  { id: "fav-6", userId: "u-lena",   propertyId: "p-6",  createdAt: "2026-06-14T01:00:00.000Z" },
 ];
 
 // ─── Saved searches ─────────────────────────────────────────────
@@ -842,7 +648,7 @@ export const savedSearches: SavedSearch[] = [
 export const viewings: Viewing[] = [
   { id: "vw-1", propertyId: "p-9", propertyTitle: "Calamba Logistics Warehouse (10,000 sqm)",
     requesterId: "u-daniel", requesterName: "Daniel Garcia", requesterEmail: "daniel.garcia@gmail.com",
-    ownerId: "u-james", ownerEmail: "james.reyes@reyesindustrial.ph",
+    ownerId: "u-rafael", ownerEmail: "rafael@cruzrealty.ph",
     preferredAt: "2026-06-20T06:00:00.000Z", message: "Can I view the warehouse with our ops team?",
     status: "requested", confirmedAt: null, ownerNote: null,
     createdAt: "2026-06-16T17:00:00.000Z", updatedAt: "2026-06-16T17:00:00.000Z" },
@@ -860,9 +666,9 @@ export const viewings: Viewing[] = [
     status: "declined", confirmedAt: null,
     ownerNote: "Sorry — we're doing inventory this week. Could we look early next month instead?",
     createdAt: "2026-06-14T10:00:00.000Z", updatedAt: "2026-06-14T12:00:00.000Z" },
-  { id: "vw-4", propertyId: "p-12", propertyTitle: "Cubao Commercial Retail Block",
+  { id: "vw-4", propertyId: "p-3", propertyTitle: "Ortigas Center Retail Arcade",
     requesterId: "u-sofia", requesterName: "Sofia Andrada", requesterEmail: "sofia.andrada@gmail.com",
-    ownerId: "u-grace", ownerEmail: "grace.tan@tanprop.ph",
+    ownerId: "u-maria", ownerEmail: "maria.santos@primeland.ph",
     preferredAt: "2026-06-22T07:00:00.000Z", message: "Interested for a coffee-shop concept; flexible on time.",
     status: "requested", confirmedAt: null, ownerNote: null,
     createdAt: "2026-06-16T10:00:00.000Z", updatedAt: "2026-06-16T10:00:00.000Z" },
@@ -870,22 +676,18 @@ export const viewings: Viewing[] = [
 
 // ─── Broker verification requests (admin-reviewed) ──────────────
 export const verificationRequests: VerificationRequest[] = [
-  { id: "vr-1", userId: "u-grace", userEmail: "grace.tan@tanprop.ph", userName: "Grace Tan",
-    company: "Tan Properties", licenseNo: "PRC-0045678",
-    message: "PRC-licensed broker; attaching our DTI registration for verification.",
-    status: "pending", createdAt: "2026-06-15T02:00:00.000Z" },
-  { id: "vr-2", userId: "u-paolo", userEmail: "paolo@vistacommercial.ph", userName: "Paolo Villanueva",
-    company: "Vista Commercial Realty", licenseNo: "DTI-5566778",
-    message: "Requesting verification for our commercial brokerage.",
-    status: "pending", createdAt: "2026-06-14T08:00:00.000Z" },
-  { id: "vr-3", userId: "u-sofia", userEmail: "sofia.andrada@gmail.com", userName: "Sofia Andrada",
+  { id: "vr-1", userId: "u-sofia", userEmail: "sofia.andrada@gmail.com", userName: "Sofia Andrada",
     company: "Andrada Family Holdings", licenseNo: "DTI-1122334",
     message: "Individual seller; verifying ownership and identity.",
     status: "pending", createdAt: "2026-06-16T03:00:00.000Z" },
-  { id: "vr-4", userId: "u-maria", userEmail: "maria.santos@primeland.ph", userName: "Maria Santos",
-    company: "Primeland Realty Corp.", licenseNo: "PRC-0012345",
+  { id: "vr-2", userId: "u-lena", userEmail: "lena.ocampo@gmail.com", userName: "Lena Ocampo",
+    company: "Ocampo Family Estate", licenseNo: "DTI-9988776",
+    message: "Verifying my identity to list the family's Batangas lot.",
+    status: "pending", createdAt: "2026-06-14T08:00:00.000Z" },
+  { id: "vr-3", userId: "u-rafael", userEmail: "rafael@cruzrealty.ph", userName: "Rafael Cruz",
+    company: "Cruz Realty & Co.", licenseNo: "PRC-0023456",
     message: "PRC license attached.", status: "approved",
-    createdAt: "2026-03-20T02:00:00.000Z", reviewedAt: "2026-03-21T02:00:00.000Z", reviewedBy: "ops@worldchat.ph" },
+    createdAt: "2025-12-20T02:00:00.000Z", reviewedAt: "2025-12-21T02:00:00.000Z", reviewedBy: "maria.santos@primeland.ph" },
 ];
 
 // ─── Agent reviews ──────────────────────────────────────────────
@@ -901,16 +703,11 @@ export const reviews: Review[] = [
     communication: 4, knowledge: 5, honesty: 5, overall: avg3(4, 5, 5),
     comment: "Very knowledgeable and honest about the leasing situation. Slightly slow to reply but worth it.",
     createdAt: "2026-06-10T07:00:00.000Z" },
-  { id: "rev-3", brokerId: "u-james", brokerEmail: "james.reyes@reyesindustrial.ph",
-    reviewerId: "u-daniel", reviewerName: "Daniel Garcia", reviewerEmail: "daniel.garcia@gmail.com",
-    communication: 4, knowledge: 5, honesty: 4, overall: avg3(4, 5, 4),
-    comment: "James knows the industrial market cold and shared the warehouse docs quickly.",
-    createdAt: "2026-06-15T09:00:00.000Z" },
-  { id: "rev-4", brokerId: "u-rafael", brokerEmail: "rafael@cruzrealty.ph",
+  { id: "rev-3", brokerId: "u-rafael", brokerEmail: "rafael@cruzrealty.ph",
     reviewerId: "u-daniel", reviewerName: "Daniel Garcia", reviewerEmail: "daniel.garcia@gmail.com",
     communication: 5, knowledge: 4, honesty: 5, overall: avg3(5, 4, 5),
-    comment: "Straightforward and transparent. Helped me compare two sites without any pressure.",
-    createdAt: "2026-06-12T03:00:00.000Z" },
+    comment: "Straightforward and transparent. Helped me through the Calamba LOI without any pressure.",
+    createdAt: "2026-06-16T03:00:00.000Z" },
 ];
 
 // ─── Lead activities & follow-ups ───────────────────────────────
@@ -918,9 +715,7 @@ export const leadActivities: LeadActivity[] = [
   { id: "la-1", leadId: "lead-1", type: "note", note: "Called — very interested, wants a proposal.", dueAt: null, done: false, createdAt: "2026-06-15T06:00:00.000Z" },
   { id: "la-2", leadId: "lead-1", type: "task", note: "Send full proposal + floor plans", dueAt: "2026-06-16T02:00:00.000Z", done: false, createdAt: "2026-06-15T06:05:00.000Z" },
   { id: "la-3", leadId: "lead-5", type: "task", note: "Schedule site tour with the BPO facilities team", dueAt: "2026-06-20T01:00:00.000Z", done: false, createdAt: "2026-06-13T06:00:00.000Z" },
-  { id: "la-4", leadId: "lead-8", type: "meeting", note: "Met at the unit — they liked the layout.", dueAt: null, done: false, createdAt: "2026-06-15T08:00:00.000Z" },
-  { id: "la-5", leadId: "lead-8", type: "task", note: "Follow up on financing approval", dueAt: "2026-06-14T02:00:00.000Z", done: false, createdAt: "2026-06-15T08:05:00.000Z" },
-  { id: "la-6", leadId: "lead-10", type: "email", note: "Sent the ATS draft for review.", dueAt: null, done: false, createdAt: "2026-06-16T03:00:00.000Z" },
-  { id: "la-7", leadId: "lead-10", type: "task", note: "Call to confirm LOI terms", dueAt: "2026-06-19T01:00:00.000Z", done: false, createdAt: "2026-06-16T03:05:00.000Z" },
-  { id: "la-8", leadId: "lead-2", type: "task", note: "Send cap-rate breakdown", dueAt: "2026-06-12T02:00:00.000Z", done: true, createdAt: "2026-06-10T06:00:00.000Z" },
+  { id: "la-4", leadId: "lead-8", type: "email", note: "Sent the ATS draft for review.", dueAt: null, done: false, createdAt: "2026-06-16T03:00:00.000Z" },
+  { id: "la-5", leadId: "lead-8", type: "task", note: "Call to confirm LOI terms", dueAt: "2026-06-19T01:00:00.000Z", done: false, createdAt: "2026-06-16T03:05:00.000Z" },
+  { id: "la-6", leadId: "lead-2", type: "task", note: "Send cap-rate breakdown", dueAt: "2026-06-12T02:00:00.000Z", done: true, createdAt: "2026-06-10T06:00:00.000Z" },
 ];
