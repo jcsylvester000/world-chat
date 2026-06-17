@@ -5,6 +5,7 @@ import dynamic from "next/dynamic";
 import { useRouter } from "next/navigation";
 import FiltersBar from "@/components/FiltersBar";
 import ChatPanel from "@/components/ChatPanel";
+import ResizablePanels from "@/components/ResizablePanels";
 import PropertyListItem from "@/components/PropertyListItem";
 import Modal from "@/components/Modal";
 import AddPropertyForm from "@/components/AddPropertyForm";
@@ -114,47 +115,63 @@ export default function DashboardPage() {
 
       {showFilters && (<div className="mb-4"><FiltersBar /></div>)}
 
-      <div className="space-y-4 lg:grid lg:h-[calc(100vh-12rem)] lg:grid-cols-3 lg:gap-4 lg:space-y-0">
-        <div className="h-[58vh] overflow-hidden rounded-2xl border border-line shadow-sm lg:order-2 lg:h-full">
-          <PropertyMap properties={filtered} focusId={focusId} onMarkerClick={(id) => router.push(`/listings/${id}`)} />
-        </div>
-
-        <div className="h-[460px] lg:order-1 lg:h-full"><ChatPanel /></div>
-
-        <div className="flex flex-col rounded-2xl border border-line bg-white shadow-sm lg:order-3 lg:h-full lg:overflow-hidden">
-          <div className="space-y-2 border-b border-line p-3">
-            <div className="flex items-center justify-between">
-              <h2 className="text-base font-semibold">Newest listings</h2>
-              <span className="text-xs text-slate-400">{filtered.length} found</span>
-            </div>
-            <input value={search} onChange={(e) => { setSearch(e.target.value); setPage(1); }} placeholder="🔍 Search listings…" className="input !py-1.5 text-sm" />
-          </div>
-
-          <div className="lg:min-h-0 lg:flex-1 lg:overflow-y-auto">
-            {loading && properties.length === 0 ? (
-              <Spinner />
-            ) : pageItems.length === 0 ? (
-              <p className="p-6 text-center text-sm text-slate-400">No listings match.</p>
-            ) : (
-              <div className="grid grid-cols-1 gap-2 p-3 sm:grid-cols-2 lg:grid-cols-1">
-                {pageItems.map((p) => (
-                  <div key={p.id} onMouseEnter={() => setFocusId(p.id)} onMouseLeave={() => setFocusId(null)}>
-                    <PropertyListItem property={p} onDm={dm} currentUserId={user?.id} />
-                  </div>
-                ))}
+      <ResizablePanels
+        storageKey="wc-dashboard-layout-v1"
+        defaultOrder={["chat", "map", "listings"]}
+        panels={[
+          { id: "chat", title: "Chat", mobileClass: "h-[460px]", render: () => <ChatPanel /> },
+          {
+            id: "map",
+            title: "Map",
+            mobileClass: "h-[58vh]",
+            render: () => (
+              <div className="h-full overflow-hidden rounded-2xl border border-line shadow-sm">
+                <PropertyMap properties={filtered} focusId={focusId} onMarkerClick={(id) => router.push(`/listings/${id}`)} />
               </div>
-            )}
-          </div>
+            ),
+          },
+          {
+            id: "listings",
+            title: "Listings",
+            mobileClass: "min-h-[460px]",
+            render: () => (
+              <div className="flex h-full flex-col overflow-hidden rounded-2xl border border-line bg-white shadow-sm">
+                <div className="space-y-2 border-b border-line p-3">
+                  <div className="flex items-center justify-between">
+                    <h2 className="text-base font-semibold">Newest listings</h2>
+                    <span className="text-xs text-slate-400">{filtered.length} found</span>
+                  </div>
+                  <input value={search} onChange={(e) => { setSearch(e.target.value); setPage(1); }} placeholder="🔍 Search listings…" className="input !py-1.5 text-sm" />
+                </div>
 
-          {totalPages > 1 && (
-            <div className="flex items-center justify-between border-t border-line px-3 py-2">
-              <button onClick={() => setPage((p) => Math.max(1, p - 1))} disabled={safePage === 1} className="btn-outline !px-3 !py-1 text-xs">← Prev</button>
-              <span className="text-xs text-slate-500">Page {safePage} / {totalPages}</span>
-              <button onClick={() => setPage((p) => Math.min(totalPages, p + 1))} disabled={safePage === totalPages} className="btn-outline !px-3 !py-1 text-xs">Next →</button>
-            </div>
-          )}
-        </div>
-      </div>
+                <div className="min-h-0 flex-1 overflow-y-auto">
+                  {loading && properties.length === 0 ? (
+                    <Spinner />
+                  ) : pageItems.length === 0 ? (
+                    <p className="p-6 text-center text-sm text-slate-400">No listings match.</p>
+                  ) : (
+                    <div className="grid grid-cols-1 gap-2 p-3 sm:grid-cols-2 lg:grid-cols-1">
+                      {pageItems.map((p) => (
+                        <div key={p.id} onMouseEnter={() => setFocusId(p.id)} onMouseLeave={() => setFocusId(null)}>
+                          <PropertyListItem property={p} onDm={dm} currentUserId={user?.id} />
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                {totalPages > 1 && (
+                  <div className="flex items-center justify-between border-t border-line px-3 py-2">
+                    <button onClick={() => setPage((p) => Math.max(1, p - 1))} disabled={safePage === 1} className="btn-outline !px-3 !py-1 text-xs">← Prev</button>
+                    <span className="text-xs text-slate-500">Page {safePage} / {totalPages}</span>
+                    <button onClick={() => setPage((p) => Math.min(totalPages, p + 1))} disabled={safePage === totalPages} className="btn-outline !px-3 !py-1 text-xs">Next →</button>
+                  </div>
+                )}
+              </div>
+            ),
+          },
+        ]}
+      />
 
       {showAdd && (
         <Modal onClose={() => setShowAdd(false)} className="!max-w-2xl">
