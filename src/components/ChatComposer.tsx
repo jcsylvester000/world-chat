@@ -28,6 +28,8 @@ export default function ChatComposer({
   replyTarget,
   onCancelReply,
   mentionSource,
+  onTyping,
+  onStopTyping,
 }: {
   onSend: (
     content: string,
@@ -37,6 +39,8 @@ export default function ChatComposer({
   replyTarget?: ReplyTarget | null;
   onCancelReply?: () => void;
   mentionSource?: (query: string) => Promise<MentionUser[]>;
+  onTyping?: () => void;
+  onStopTyping?: () => void;
 }) {
   const [draft, setDraft] = useState("");
   const [showEmoji, setShowEmoji] = useState(false);
@@ -68,6 +72,7 @@ export default function ChatComposer({
   const onChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
     setDraft(value);
+    if (value.trim()) onTyping?.();
     void detectMention(value, e.target.selectionStart ?? value.length);
   };
 
@@ -89,6 +94,7 @@ export default function ChatComposer({
     if (!text) return;
     setDraft("");
     closeMentions();
+    onStopTyping?.();
     try {
       await onSend(text);
     } catch {

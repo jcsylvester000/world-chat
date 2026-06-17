@@ -11,6 +11,8 @@ import AddGroupModal from "@/components/AddGroupModal";
 import GroupDetailModal from "@/components/GroupDetailModal";
 import Modal from "@/components/Modal";
 import QuickSwitcher, { type QuickItem } from "@/components/QuickSwitcher";
+import TypingIndicator from "@/components/TypingIndicator";
+import { usePresence, usePresenceHeartbeat, useTyping } from "@/lib/realtime-hooks";
 import { cn, displayName } from "@/lib/utils";
 import type { ChatGroup, DirectThread, Profile } from "@/lib/types";
 
@@ -162,6 +164,12 @@ export default function ChatPanel({
   const worldUnread = unreadCount(worldMessages.map((m) => ({ authorId: m.userId, createdAt: m.createdAt })), "world");
   const directUnread = threads.reduce((n, th) => n + threadUnread(th), 0);
   const groupsUnread = groups.reduce((n, g) => n + groupUnread(g), 0);
+
+  usePresenceHeartbeat(user?.id, user?.email);
+  const dmUserIds = user ? threads.map((t) => otherOf(t, user.id).id) : [];
+  const presence = usePresence(dmUserIds);
+  const dmTyping = useTyping(activeThreadId ? "dm:" + activeThreadId : null, user?.id, user?.email);
+  const worldTyping = useTyping(tab === "world" ? "world" : null, user?.id, user?.email);
   const mentionSource = async (q: string) => {
     if (!user) return [];
     const rs = await searchDiscoverableUsers(q, user.id);
@@ -238,8 +246,11 @@ export default function ChatPanel({
           <div className="flex min-h-0 flex-1 flex-col">
             <div className="flex items-center gap-2 border-b border-line px-3 py-2">
               <button onClick={() => { setActiveThreadId(null); setDmReply(null); }} className="text-slate-500">←</button>
-              <Avatar email={activeOther.email} size={30} />
-              <span className="text-sm font-medium">{displayName(activeOther.email)}</span>
+              <Avatar email={activeOther.email} size={30} online={presence[activeOther.id]} />
+              <div className="leading-tight">
+                <span className="block text-sm font-medium">{displayName(activeOther.email)}</span>
+                <span className="block text-[11px] text-slate-400">{presence[activeOther.id] ? "Active now" : "Offline"}</span>
+              </div>
             </div>
             <div ref={dmRef} className="min-h-0 flex-1 overflow-y-auto p-3">
               <MessageList
@@ -267,6 +278,7 @@ export default function ChatPanel({
                 newMessageAfter={dmDividerAt}
               />
             </div>
+            <TypingIndicator users={dmTyping.typers} />
             <ChatComposer
               onSend={async (c, o) => {
                 await sendDirect(activeThread.id, user, c, dmReply ? { ...o, replyTo: dmReply } : o);
@@ -275,6 +287,8 @@ export default function ChatPanel({
               replyTarget={dmReply}
               onCancelReply={() => setDmReply(null)}
               mentionSource={mentionSource}
+              onTyping={dmTyping.notifyTyping}
+              onStopTyping={dmTyping.stopTyping}
             />
           </div>
         ) : (
@@ -294,7 +308,7 @@ export default function ChatPanel({
                     return (
                       <li key={t.id}>
                         <button onClick={() => setActiveThreadId(t.id)} className="flex w-full items-center gap-3 border-b border-line px-3 py-2.5 text-left hover:bg-slate-50">
-                          <Avatar email={o.email} size={36} />
+                          <Avatar email={o.email} size={36} online={presence[o.id]} />
                           <div className="min-w-0 flex-1">
                             <p className="truncate text-sm font-medium text-ink">{displayName(o.email)}</p>
                             <p className="truncate text-xs text-slate-500">{last ? (last.contentType === "image" ? "📷 Photo" : last.content) : "Say hello 👋"}</p>
@@ -363,6 +377,7 @@ export default function ChatPanel({
               newMessageAfter={worldDividerAt}
             />
           </div>
+          <TypingIndicator users={worldTyping.typers} />
           <ChatComposer
             onSend={async (c, o) => {
               await sendWorld(user, c, worldReply ? { ...o, replyTo: worldReply } : o);
@@ -372,6 +387,8 @@ export default function ChatPanel({
             replyTarget={worldReply}
             onCancelReply={() => setWorldReply(null)}
             mentionSource={mentionSource}
+            onTyping={worldTyping.notifyTyping}
+            onStopTyping={worldTyping.stopTyping}
           />
         </div>
       )}

@@ -364,6 +364,19 @@ rest of the app still runs on the in-memory mock until you migrate each feature
 (see the playbook below). Nothing breaks by default — Postgres only kicks in
 when you flip the data-source flag.
 
+> **Realtime chat (presence + typing) is also live on Neon.** Two standalone
+> tables — `ChatPresence` and `ChatTyping` — back online/offline dots and the
+> "… is typing" indicators, delivered by short-interval **polling** (no
+> websockets, so it runs on Netlify's serverless functions). Flow:
+> `realtime-hooks.ts (poll)` → `src/lib/data/realtime.ts` → `/api/chat/presence`
+> + `/api/chat/typing` → `src/server/repos/presence.ts` → Prisma → Neon.
+> Heartbeat every 30s marks you online (60s window); typing pings are throttled
+> to one per 2s and auto-expire after 6s. The tables are already created on the
+> project's Neon DB; to recreate them elsewhere run `npm run db:push` (they're
+> in `prisma/schema.prisma`). The chat **messages** themselves are still on the
+> mock layer — that's the next migration step, where per-plan subscription
+> limits (retention, message caps) will be applied.
+
 ### Architecture
 
 Prisma runs **only on the server**, so the client talks to it through Next.js

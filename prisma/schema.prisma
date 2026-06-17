@@ -210,6 +210,22 @@ model DirectMessage {
   @@index([threadId])
 }
 
+model ChatPresence {
+  userId     String   @id
+  email      String
+  lastSeenAt DateTime @default(now())
+}
+
+model ChatTyping {
+  conversationId String
+  userId         String
+  email          String
+  updatedAt      DateTime @default(now())
+
+  @@id([conversationId, userId])
+  @@index([conversationId])
+}
+
 model Payment {
   id            String          @id @default(cuid())
   user          Profile         @relation(fields: [userId], references: [id])

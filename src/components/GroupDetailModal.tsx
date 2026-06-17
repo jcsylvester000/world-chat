@@ -5,6 +5,8 @@ import Modal from "@/components/Modal";
 import Avatar from "@/components/ui/Avatar";
 import MessageList, { type ChatMsg } from "@/components/MessageList";
 import ChatComposer, { type ReplyTarget } from "@/components/ChatComposer";
+import TypingIndicator from "@/components/TypingIndicator";
+import { usePresence, useTyping } from "@/lib/realtime-hooks";
 import { useAuthStore } from "@/lib/store/auth-store";
 import { useChatStore } from "@/lib/store/chat-store";
 import { listAddableUsers } from "@/lib/data/services";
@@ -53,6 +55,8 @@ export default function GroupDetailModal({
   const [groupName, setGroupName] = useState(group.name);
   const [reply, setReply] = useState<ReplyTarget | null>(null);
   const [dividerAt, setDividerAt] = useState<string | null>(null);
+  const presence = usePresence(members.map((m) => m.id));
+  const typing = useTyping("group:" + group.id, user?.id, user?.email);
   const mentionSource = async (q: string) => {
     const ql = q.toLowerCase();
     return members
@@ -157,6 +161,8 @@ export default function GroupDetailModal({
             )}
           </div>
           {user && (
+            <>
+            <TypingIndicator users={typing.typers} />
             <ChatComposer
               onSend={async (content, opts) => {
                 await sendGroupMessage(group.id, user, content, reply ? { ...opts, replyTo: reply } : opts);
@@ -165,7 +171,10 @@ export default function GroupDetailModal({
               replyTarget={reply}
               onCancelReply={() => setReply(null)}
               mentionSource={mentionSource}
+              onTyping={typing.notifyTyping}
+              onStopTyping={typing.stopTyping}
             />
+            </>
           )}
         </div>
       ) : (
@@ -177,7 +186,7 @@ export default function GroupDetailModal({
                 className="flex items-center justify-between rounded-lg px-2 py-2 hover:bg-slate-50"
               >
                 <div className="flex items-center gap-2">
-                  <Avatar email={m.email} size={32} />
+                  <Avatar email={m.email} size={32} online={presence[m.id]} />
                   <span className="text-sm">{displayName(m.email)}</span>
                   {group.createdByEmail === m.email && (
                     <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[10px] text-slate-500">
