@@ -10,6 +10,7 @@ import ChatComposer, { type ReplyTarget } from "@/components/ChatComposer";
 import AddGroupModal from "@/components/AddGroupModal";
 import GroupDetailModal from "@/components/GroupDetailModal";
 import Modal from "@/components/Modal";
+import QuickSwitcher, { type QuickItem } from "@/components/QuickSwitcher";
 import { cn, displayName } from "@/lib/utils";
 import type { ChatGroup, DirectThread, Profile } from "@/lib/types";
 
@@ -70,6 +71,8 @@ export default function ChatPanel({
   const [worldReply, setWorldReply] = useState<ReplyTarget | null>(null);
   const [dmDividerAt, setDmDividerAt] = useState<string | null>(null);
   const [worldDividerAt, setWorldDividerAt] = useState<string | null>(null);
+  const [switcherOpen, setSwitcherOpen] = useState(false);
+  const [switcherPeople, setSwitcherPeople] = useState<Profile[]>([]);
 
   useEffect(() => {
     if (!user) return;
@@ -131,6 +134,21 @@ export default function ChatPanel({
     if (tab === "world") markRead("world");
   }, [tab, worldMessages.length, markRead]);
 
+  // Cmd/Ctrl-K opens the quick switcher
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k") {
+        e.preventDefault();
+        setSwitcherOpen((v) => !v);
+      }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, []);
+  useEffect(() => {
+    if (switcherOpen && user) listContacts(user.id).then(setSwitcherPeople);
+  }, [switcherOpen, user]);
+
   const activeThread = useMemo(() => threads.find((t) => t.id === activeThreadId) ?? null, [threads, activeThreadId]);
   const activeOther = activeThread && user ? otherOf(activeThread, user.id) : null;
   const unreadCount = (items: { authorId: string; createdAt: string }[], key: string) => {
@@ -186,6 +204,19 @@ export default function ChatPanel({
 
   if (!user) return null;
 
+  const otherIds = new Set(threads.map((t) => otherOf(t, user.id).id));
+  const quickItems: QuickItem[] = [
+    { key: "world", kind: "world", label: "World chat", sub: "Everyone", badge: worldUnread, run: () => { setTab("world"); setActiveThreadId(null); } },
+    ...groups.map((g) => ({ key: "g:" + g.id, kind: "group" as const, label: g.name, sub: "Group", badge: groupUnread(g), run: () => { setTab("groups"); setActiveGroup(g); } })),
+    ...threads.map((t) => {
+      const oo = otherOf(t, user.id);
+      return { key: "t:" + t.id, kind: "dm" as const, label: displayName(oo.email), sub: oo.email, email: oo.email, badge: threadUnread(t), run: () => { setTab("direct"); setActiveThreadId(t.id); } };
+    }),
+    ...switcherPeople
+      .filter((p) => !otherIds.has(p.id))
+      .map((p) => ({ key: "p:" + p.id, kind: "person" as const, label: displayName(p.email), sub: p.email, email: p.email, run: async () => { const tid = await openThread(user, p); setTab("direct"); setActiveThreadId(tid); } })),
+  ];
+
   return (
     <div className="flex h-full flex-col overflow-hidden rounded-2xl border border-line bg-white shadow-sm">
       <div className="flex border-b border-line p-1">
@@ -198,6 +229,7 @@ export default function ChatPanel({
           </button>
           );
         })}
+        <button onClick={() => setSwitcherOpen(true)} title="Quick switch (Ctrl/⌘K)" className="ml-1 shrink-0 rounded-lg px-2 text-sm text-slate-400 hover:bg-slate-50 hover:text-ink">🔍</button>
       </div>
 
       {/* DIRECT */}
@@ -344,6 +376,7 @@ export default function ChatPanel({
         </div>
       )}
 
+      <QuickSwitcher open={switcherOpen} onClose={() => setSwitcherOpen(false)} items={quickItems} />
       {showAddGroup && <AddGroupModal onClose={() => setShowAddGroup(false)} />}
       {activeGroup && <GroupDetailModal group={activeGroup} onClose={() => setActiveGroup(null)} />}
       {showNewDm && (
