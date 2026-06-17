@@ -46,6 +46,10 @@ export interface Profile {
   planInterval: BillingInterval | null; // billing term while on premium
   planRenewsAt: string | null; // ISO date the current premium term renews/expires (= month-end due date for monthly)
   lastActiveAt: string; // ISO of last activity (drives free-listing inactivity expiry)
+  // ── Broker verification ──
+  verified?: boolean;
+  company?: string | null; // verified business name
+  licenseNo?: string | null; // PRC / DTI / SEC registration
 }
 
 export interface PropertyAttachment {
@@ -381,6 +385,7 @@ export interface Lead {
   lostReason: string | null;
   createdAt: string;
   updatedAt: string; // bumps on stage move — drives the "stale" highlight
+  nextActionAt?: string | null; // earliest open follow-up due date (computed)
 }
 
 // Lookup bundle the board needs to render columns + form dropdowns.
@@ -398,5 +403,97 @@ export interface Favorite {
   id: string;
   userId: string;
   propertyId: string;
+  createdAt: string;
+}
+
+// ─── Saved searches + new-listing alerts ────────────────────────
+export interface SavedSearch {
+  id: string;
+  userId: string;
+  name: string;
+  filters: ListingFilters;
+  notify: boolean; // alerts on/off
+  createdAt: string;
+  lastViewedAt: string; // anything newer that matches counts as "new"
+}
+
+// Returned to the board UI with the count of new matches since lastViewedAt.
+export interface SavedSearchWithCount extends SavedSearch {
+  newCount: number;
+}
+
+// ─── Schedule a viewing ─────────────────────────────────────────
+export type ViewingStatus = "requested" | "confirmed" | "declined" | "cancelled";
+
+export interface Viewing {
+  id: string;
+  propertyId: string;
+  propertyTitle: string;
+  requesterId: string;
+  requesterName: string;
+  requesterEmail: string;
+  ownerId: string;
+  ownerEmail: string;
+  preferredAt: string; // ISO — the buyer's requested slot
+  message: string;
+  status: ViewingStatus;
+  confirmedAt: string | null; // owner's confirmed slot (may differ = reschedule)
+  ownerNote: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+// ─── Broker verification ────────────────────────────────────────
+export type VerificationStatus = "pending" | "approved" | "rejected";
+
+export interface VerificationRequest {
+  id: string;
+  userId: string;
+  userEmail: string;
+  userName: string;
+  company: string;
+  licenseNo: string;
+  message: string;
+  status: VerificationStatus;
+  createdAt: string;
+  reviewedAt?: string;
+  reviewedBy?: string;
+}
+
+// ─── Agent reviews & ratings ────────────────────────────────────
+export interface Review {
+  id: string;
+  brokerId: string;
+  brokerEmail: string;
+  reviewerId: string;
+  reviewerName: string;
+  reviewerEmail: string;
+  communication: number; // 1-5
+  knowledge: number; // 1-5 (local market knowledge)
+  honesty: number; // 1-5 (honesty about process)
+  overall: number; // average of the three
+  comment: string;
+  createdAt: string;
+}
+
+// Everything the listing detail page needs to render a broker's reviews.
+export interface BrokerReviewsBundle {
+  average: number; // 0 when no reviews
+  count: number;
+  reviews: Review[];
+  canReview: boolean; // viewer had a confirmed viewing with this broker
+  myReview: Review | null;
+}
+
+// ─── Lead activities & follow-up reminders ──────────────────────
+export type LeadActivityType = "call" | "email" | "meeting" | "note" | "task";
+
+export interface LeadActivity {
+  id: string;
+  leadId: string;
+  type: LeadActivityType;
+  note: string;
+  dueAt: string | null; // set for follow-up tasks
+  done: boolean;
   createdAt: string;
 }

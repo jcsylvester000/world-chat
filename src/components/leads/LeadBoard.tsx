@@ -111,6 +111,14 @@ export default function LeadBoard({ properties }: { properties: Pick<Property, "
                             Close {formatDate(l.expectedCloseDate)}
                           </span>
                         )}
+                        {l.nextActionAt && l.status === "open" && (
+                          <span className={cn(
+                            "rounded-full px-1.5 py-0.5 text-[10px]",
+                            new Date(l.nextActionAt) < new Date() ? "bg-rose-100 text-rose-600" : "bg-indigo-100 text-indigo-600"
+                          )}>
+                            ⏰ {formatDate(l.nextActionAt)}
+                          </span>
+                        )}
                       </div>
                       <select
                         value={l.stageId}

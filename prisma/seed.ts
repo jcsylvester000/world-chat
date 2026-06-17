@@ -12,6 +12,10 @@ import {
   leadTypes,
   leads,
   favorites,
+  savedSearches,
+  viewings,
+  reviews,
+  leadActivities,
 } from "@/lib/data/mock-data";
 import type { PropertyType } from "@/lib/types";
 
@@ -28,8 +32,12 @@ const TYPE_TO_DB: Record<PropertyType, DbPropertyType> = {
 
 async function main() {
   // Clear in dependency order (dev seed — safe to wipe).
+  await prisma.leadActivity.deleteMany();
   await prisma.lead.deleteMany();
   await prisma.favorite.deleteMany();
+  await prisma.savedSearch.deleteMany();
+  await prisma.viewing.deleteMany();
+  await prisma.review.deleteMany();
   await prisma.leadStage.deleteMany();
   await prisma.leadSource.deleteMany();
   await prisma.leadType.deleteMany();
@@ -54,6 +62,9 @@ async function main() {
         planInterval: u.planInterval ?? undefined,
         planRenewsAt: u.planRenewsAt ? new Date(u.planRenewsAt) : undefined,
         lastActiveAt: new Date(u.lastActiveAt),
+        verified: u.verified ?? false,
+        company: u.company ?? null,
+        licenseNo: u.licenseNo ?? null,
       },
     });
   }
@@ -127,6 +138,48 @@ async function main() {
   for (const f of favorites) {
     await prisma.favorite.create({
       data: { id: f.id, userId: f.userId, propertyId: f.propertyId, createdAt: new Date(f.createdAt) },
+    });
+  }
+
+  for (const s of savedSearches) {
+    await prisma.savedSearch.create({
+      data: {
+        id: s.id, userId: s.userId, name: s.name, filters: s.filters as object,
+        notify: s.notify, createdAt: new Date(s.createdAt), lastViewedAt: new Date(s.lastViewedAt),
+      },
+    });
+  }
+
+  for (const v of viewings) {
+    await prisma.viewing.create({
+      data: {
+        id: v.id, propertyId: v.propertyId, propertyTitle: v.propertyTitle,
+        requesterId: v.requesterId, requesterName: v.requesterName, requesterEmail: v.requesterEmail,
+        ownerId: v.ownerId, ownerEmail: v.ownerEmail,
+        preferredAt: new Date(v.preferredAt), message: v.message, status: v.status,
+        confirmedAt: v.confirmedAt ? new Date(v.confirmedAt) : null, ownerNote: v.ownerNote,
+        createdAt: new Date(v.createdAt), updatedAt: new Date(v.updatedAt),
+      },
+    });
+  }
+
+  for (const r of reviews) {
+    await prisma.review.create({
+      data: {
+        id: r.id, brokerId: r.brokerId, brokerEmail: r.brokerEmail,
+        reviewerId: r.reviewerId, reviewerName: r.reviewerName, reviewerEmail: r.reviewerEmail,
+        communication: r.communication, knowledge: r.knowledge, honesty: r.honesty,
+        overall: r.overall, comment: r.comment, createdAt: new Date(r.createdAt),
+      },
+    });
+  }
+
+  for (const a of leadActivities) {
+    await prisma.leadActivity.create({
+      data: {
+        id: a.id, leadId: a.leadId, type: a.type, note: a.note,
+        dueAt: a.dueAt ? new Date(a.dueAt) : null, done: a.done, createdAt: new Date(a.createdAt),
+      },
     });
   }
 

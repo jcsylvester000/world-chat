@@ -33,7 +33,9 @@ export default function LeadsPage() {
     const open = leads.filter((l) => l.status === "open");
     const openValue = open.reduce((s, l) => s + l.value, 0);
     const won = leads.filter((l) => l.status === "won");
-    return { openCount: open.length, openValue, wonCount: won.length };
+    const now = Date.now();
+    const overdue = open.filter((l) => l.nextActionAt && new Date(l.nextActionAt).getTime() < now).length;
+    return { openCount: open.length, openValue, wonCount: won.length, overdue };
   }, [leads]);
 
   // Auth/active is handled by the layout's AuthGate. Wait for hydration here.
@@ -79,6 +81,12 @@ export default function LeadsPage() {
             <p className="font-semibold text-emerald-600">{summary.wonCount}</p>
             <p className="text-[11px] text-slate-400">Won</p>
           </div>
+          {summary.overdue > 0 && (
+            <div className="text-right">
+              <p className="font-semibold text-rose-600">{summary.overdue}</p>
+              <p className="text-[11px] text-slate-400">Follow-ups due</p>
+            </div>
+          )}
         </div>
       </header>
 

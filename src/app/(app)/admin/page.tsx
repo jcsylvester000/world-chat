@@ -131,6 +131,7 @@ function AdminContent() {
           <Link href="/admin/tickets" className="btn-outline !py-1.5 text-xs">🎫 Tickets →</Link>
           <Link href="/admin/ai-requests" className="btn-outline !py-1.5 text-xs">🤖 AI requests →</Link>
           <Link href="/admin/accounting" className="btn-outline !py-1.5 text-xs">💰 Accounting →</Link>
+          <Link href="/admin/verification" className="btn-outline !py-1.5 text-xs">✓ Verification →</Link>
         </div>
       </div>
 

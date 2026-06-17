@@ -5,6 +5,7 @@ import Modal from "@/components/Modal";
 import Button from "@/components/ui/Button";
 import { useAuthStore } from "@/lib/store/auth-store";
 import { useLeadsStore } from "@/lib/store/leads-store";
+import LeadActivities from "@/components/leads/LeadActivities";
 import type { Lead, LeadMeta, Property } from "@/lib/types";
 
 type Props = {
@@ -19,6 +20,7 @@ export default function LeadModal({ lead, meta, properties, onClose }: Props) {
   const add = useLeadsStore((s) => s.add);
   const edit = useLeadsStore((s) => s.edit);
   const remove = useLeadsStore((s) => s.remove);
+  const refreshBoard = useLeadsStore((s) => s.fetch);
 
   const isEdit = !!lead;
   const [title, setTitle] = useState(lead?.title ?? "");
@@ -162,6 +164,10 @@ export default function LeadModal({ lead, meta, properties, onClose }: Props) {
 
           {error && <p className="text-sm text-danger">{error}</p>}
         </div>
+
+        {isEdit && lead && (
+          <LeadActivities leadId={lead.id} onChanged={() => user && refreshBoard(user.id)} />
+        )}
 
         <div className="mt-5 flex items-center justify-between gap-2">
           {isEdit ? (

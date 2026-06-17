@@ -11,6 +11,7 @@ import { useAuthStore } from "@/lib/store/auth-store";
 import { useSocialStore } from "@/lib/store/social-store";
 import { useChatStore } from "@/lib/store/chat-store";
 import { displayName } from "@/lib/utils";
+import VerifiedBadge from "@/components/VerifiedBadge";
 import type { ChatVisibility, Profile } from "@/lib/types";
 
 const VIS_OPTIONS: { value: ChatVisibility; label: string; hint: string }[] = [
@@ -191,6 +192,7 @@ export default function PeoplePage() {
               <div className="flex items-center gap-2">
                 <Avatar email={p.email} size={32} />
                 <span className="text-sm">{displayName(p.email)}</span>
+                <VerifiedBadge email={p.email} showLabel={false} />
               </div>
               {contactIds.has(p.id) ? (
                 <Badge tone="green">Connected</Badge>
@@ -267,7 +269,7 @@ export default function PeoplePage() {
                 <div className="flex items-center gap-3">
                   <Avatar email={c.email} size={40} />
                   <div>
-                    <p className="text-sm font-medium">{displayName(c.email)}</p>
+                    <p className="flex items-center gap-1 text-sm font-medium">{displayName(c.email)}<VerifiedBadge email={c.email} showLabel={false} /></p>
                     <p className="text-xs text-slate-500">{c.email}</p>
                   </div>
                 </div>

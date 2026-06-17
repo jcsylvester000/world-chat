@@ -6,6 +6,7 @@ import Avatar from "@/components/ui/Avatar";
 import Badge from "@/components/ui/Badge";
 import PropertyTags from "@/components/PropertyTags";
 import FavoriteButton from "@/components/FavoriteButton";
+import VerifiedBadge from "@/components/VerifiedBadge";
 import { displayName, formatDate, formatPeso } from "@/lib/utils";
 import type { Property } from "@/lib/types";
 
@@ -82,6 +83,7 @@ function PropertyCard({
             <span className="text-xs text-slate-500">
               {displayName(property.ownerEmail)}
             </span>
+            <VerifiedBadge email={property.ownerEmail} showLabel={false} />
           </div>
           {onDm && property.ownerId !== currentUserId && (
             <button

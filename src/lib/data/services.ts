@@ -27,6 +27,11 @@ import {
   leadSources,
   leadTypes,
   favorites,
+  savedSearches,
+  viewings,
+  verificationRequests,
+  reviews,
+  leadActivities,
 } from "./mock-data";
 import { matchesListingFilters } from "@/lib/filter";
 import {
@@ -64,6 +69,14 @@ import {
   type Lead,
   type LeadMeta,
   type LeadStatus,
+  type SavedSearch,
+  type SavedSearchWithCount,
+  type Viewing,
+  type VerificationRequest,
+  type Review,
+  type BrokerReviewsBundle,
+  type LeadActivity,
+  type LeadActivityType,
 } from "@/lib/types";
 import { BASIC_LISTING_CAP, PREMIUM_PRICE_MONTHLY, PREMIUM_PRICE_ANNUAL, aiPrice } from "@/lib/constants";
 import * as billing from "@/lib/billing";
@@ -1203,10 +1216,16 @@ export async function getLeadMeta(): Promise<LeadMeta> {
 
 export async function listLeadsByOwner(ownerId: string): Promise<Lead[]> {
   if (USE_PRISMA) return apiGet<Lead[]>(`/api/leads?ownerId=${encodeURIComponent(ownerId)}`);
+  const mine = leads
+    .filter((l) => l.ownerId === ownerId)
+    .sort((a, b) => b.updatedAt.localeCompare(a.updatedAt));
   return latency(
-    leads
-      .filter((l) => l.ownerId === ownerId)
-      .sort((a, b) => b.updatedAt.localeCompare(a.updatedAt))
+    mine.map((l) => {
+      const open = leadActivities
+        .filter((a) => a.leadId === l.id && !a.done && a.dueAt)
+        .sort((x, y) => (x.dueAt as string).localeCompare(y.dueAt as string));
+      return { ...l, nextActionAt: open[0]?.dueAt ?? null };
+    })
   );
 }
 
@@ -1293,5 +1312,294 @@ export async function removeFavorite(userId: string, propertyId: string): Promis
   }
   const i = favorites.findIndex((f) => f.userId === userId && f.propertyId === propertyId);
   if (i >= 0) favorites.splice(i, 1);
+  await latency(null);
+}
+
+// ─── Saved searches ─────────────────────────────────────────────
+export async function listSavedSearches(userId: string): Promise<SavedSearchWithCount[]> {
+  if (USE_PRISMA)
+    return apiGet<SavedSearchWithCount[]>(`/api/saved-searches?userId=${encodeURIComponent(userId)}`);
+  const rows = savedSearches
+    .filter((s) => s.userId === userId)
+    .sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+  return latency(
+    rows.map((s) => {
+      const since = new Date(s.lastViewedAt).getTime();
+      const newCount = properties.filter(
+        (p) => new Date(p.createdAt).getTime() > since && matchesListingFilters(p, s.filters)
+      ).length;
+      return { ...s, newCount };
+    })
+  );
+}
+
+export async function createSavedSearch(
+  userId: string,
+  name: string,
+  filters: ListingFilters
+): Promise<SavedSearch> {
+  if (USE_PRISMA) return apiSend<SavedSearch>("/api/saved-searches", "POST", { userId, name, filters });
+  const s: SavedSearch = {
+    id: uid("ss"),
+    userId,
+    name,
+    filters,
+    notify: true,
+    createdAt: nowIso(),
+    lastViewedAt: nowIso(),
+  };
+  savedSearches.unshift(s);
+  return latency(s);
+}
+
+export async function deleteSavedSearch(id: string): Promise<void> {
+  if (USE_PRISMA) {
+    await apiSend(`/api/saved-searches/${encodeURIComponent(id)}`, "DELETE");
+    return;
+  }
+  const i = savedSearches.findIndex((s) => s.id === id);
+  if (i >= 0) savedSearches.splice(i, 1);
+  await latency(null);
+}
+
+export async function touchSavedSearch(id: string): Promise<void> {
+  if (USE_PRISMA) {
+    await apiSend(`/api/saved-searches/${encodeURIComponent(id)}`, "PATCH", { markViewed: true });
+    return;
+  }
+  const s = savedSearches.find((x) => x.id === id);
+  if (s) s.lastViewedAt = nowIso();
+  await latency(null);
+}
+
+export async function setSavedSearchNotify(id: string, notify: boolean): Promise<void> {
+  if (USE_PRISMA) {
+    await apiSend(`/api/saved-searches/${encodeURIComponent(id)}`, "PATCH", { notify });
+    return;
+  }
+  const s = savedSearches.find((x) => x.id === id);
+  if (s) s.notify = notify;
+  await latency(null);
+}
+
+// ─── Schedule a viewing ─────────────────────────────────────────
+type ViewingInput = Omit<Viewing, "id" | "status" | "confirmedAt" | "ownerNote" | "createdAt" | "updatedAt">;
+
+export async function listViewingsForOwner(ownerId: string): Promise<Viewing[]> {
+  if (USE_PRISMA) return apiGet<Viewing[]>(`/api/viewings?ownerId=${encodeURIComponent(ownerId)}`);
+  return latency(
+    viewings.filter((v) => v.ownerId === ownerId).sort((a, b) => b.createdAt.localeCompare(a.createdAt))
+  );
+}
+
+export async function listViewingsForRequester(requesterId: string): Promise<Viewing[]> {
+  if (USE_PRISMA) return apiGet<Viewing[]>(`/api/viewings?requesterId=${encodeURIComponent(requesterId)}`);
+  return latency(
+    viewings.filter((v) => v.requesterId === requesterId).sort((a, b) => b.createdAt.localeCompare(a.createdAt))
+  );
+}
+
+export async function createViewing(input: ViewingInput): Promise<Viewing> {
+  if (USE_PRISMA) return apiSend<Viewing>("/api/viewings", "POST", input);
+  const now = nowIso();
+  const v: Viewing = { ...input, id: uid("vw"), status: "requested", confirmedAt: null, ownerNote: null, createdAt: now, updatedAt: now };
+  viewings.unshift(v);
+  return latency(v);
+}
+
+export async function respondToViewing(
+  id: string,
+  action: "confirm" | "decline",
+  confirmedAt?: string | null,
+  ownerNote?: string | null
+): Promise<Viewing | undefined> {
+  if (USE_PRISMA)
+    return apiSend<Viewing>(`/api/viewings/${encodeURIComponent(id)}`, "PATCH", { action, confirmedAt, ownerNote });
+  const v = viewings.find((x) => x.id === id);
+  if (!v) return latency(undefined);
+  if (action === "confirm") {
+    v.status = "confirmed";
+    v.confirmedAt = confirmedAt ?? v.preferredAt;
+    v.ownerNote = ownerNote ?? null;
+  } else {
+    v.status = "declined";
+    v.ownerNote = ownerNote ?? null;
+  }
+  v.updatedAt = nowIso();
+  return latency(v);
+}
+
+export async function cancelViewing(id: string): Promise<Viewing | undefined> {
+  if (USE_PRISMA)
+    return apiSend<Viewing>(`/api/viewings/${encodeURIComponent(id)}`, "PATCH", { action: "cancel" });
+  const v = viewings.find((x) => x.id === id);
+  if (!v) return latency(undefined);
+  v.status = "cancelled";
+  v.updatedAt = nowIso();
+  return latency(v);
+}
+
+// ─── Broker verification (mock; profiles/admin live in this layer) ──
+export async function getVerificationRequest(userId: string): Promise<VerificationRequest | undefined> {
+  return latency(
+    verificationRequests
+      .filter((r) => r.userId === userId)
+      .sort((a, b) => b.createdAt.localeCompare(a.createdAt))[0]
+  );
+}
+
+export async function listVerificationRequests(): Promise<VerificationRequest[]> {
+  return latency(
+    [...verificationRequests].sort((a, b) => {
+      if (a.status === "pending" && b.status !== "pending") return -1;
+      if (b.status === "pending" && a.status !== "pending") return 1;
+      return b.createdAt.localeCompare(a.createdAt);
+    })
+  );
+}
+
+export async function submitVerification(
+  userId: string,
+  input: { company: string; licenseNo: string; message: string }
+): Promise<VerificationRequest> {
+  const u = profiles.find((p) => p.id === userId);
+  const idx = verificationRequests.findIndex((r) => r.userId === userId && r.status === "pending");
+  if (idx >= 0) verificationRequests.splice(idx, 1);
+  const req: VerificationRequest = {
+    id: uid("vr"),
+    userId,
+    userEmail: u?.email ?? "",
+    userName: u?.username ?? "",
+    company: input.company,
+    licenseNo: input.licenseNo,
+    message: input.message,
+    status: "pending",
+    createdAt: nowIso(),
+  };
+  verificationRequests.unshift(req);
+  return latency(req);
+}
+
+export async function reviewVerification(
+  id: string,
+  approve: boolean,
+  reviewerEmail: string
+): Promise<VerificationRequest | undefined> {
+  const req = verificationRequests.find((r) => r.id === id);
+  if (!req) return latency(undefined);
+  req.status = approve ? "approved" : "rejected";
+  req.reviewedAt = nowIso();
+  req.reviewedBy = reviewerEmail;
+  if (approve) {
+    const u = profiles.find((p) => p.id === req.userId);
+    if (u) {
+      u.verified = true;
+      u.company = req.company;
+      u.licenseNo = req.licenseNo;
+    }
+  }
+  auditLogs.unshift({
+    id: uid("log"),
+    adminId: "u-admin",
+    adminEmail: reviewerEmail,
+    action: approve ? "Verified broker" : "Rejected verification",
+    target: req.userEmail,
+    detail: `${req.company} · ${req.licenseNo}`,
+    createdAt: nowIso(),
+  });
+  return latency(req);
+}
+
+// ─── Agent reviews & ratings ────────────────────────────────────
+type ReviewSubmit = {
+  brokerId: string; brokerEmail: string; reviewerId: string; reviewerName: string; reviewerEmail: string;
+  communication: number; knowledge: number; honesty: number; comment: string;
+};
+
+export async function getBrokerReviews(brokerId: string, viewerId?: string): Promise<BrokerReviewsBundle> {
+  if (USE_PRISMA) {
+    const q = viewerId
+      ? `?brokerId=${encodeURIComponent(brokerId)}&viewerId=${encodeURIComponent(viewerId)}`
+      : `?brokerId=${encodeURIComponent(brokerId)}`;
+    return apiGet<BrokerReviewsBundle>(`/api/reviews${q}`);
+  }
+  const list = reviews
+    .filter((r) => r.brokerId === brokerId)
+    .sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+  const count = list.length;
+  const average = count ? Math.round((list.reduce((s, r) => s + r.overall, 0) / count) * 10) / 10 : 0;
+  const myReview = viewerId ? list.find((r) => r.reviewerId === viewerId) ?? null : null;
+  const canReview =
+    !!viewerId &&
+    viewerId !== brokerId &&
+    viewings.some((v) => v.requesterId === viewerId && v.ownerId === brokerId && v.status === "confirmed");
+  return latency({ average, count, reviews: list, canReview, myReview });
+}
+
+export async function submitReview(input: ReviewSubmit): Promise<Review> {
+  if (USE_PRISMA) return apiSend<Review>("/api/reviews", "POST", input);
+  const overall = Math.round(((input.communication + input.knowledge + input.honesty) / 3) * 10) / 10;
+  const existing = reviews.find((r) => r.brokerId === input.brokerId && r.reviewerId === input.reviewerId);
+  if (existing) {
+    existing.communication = input.communication;
+    existing.knowledge = input.knowledge;
+    existing.honesty = input.honesty;
+    existing.comment = input.comment;
+    existing.overall = overall;
+    return latency(existing);
+  }
+  const rev: Review = { id: uid("rev"), overall, createdAt: nowIso(), ...input };
+  reviews.unshift(rev);
+  return latency(rev);
+}
+
+// ─── Lead activities & follow-ups ───────────────────────────────
+export async function listLeadActivities(leadId: string): Promise<LeadActivity[]> {
+  if (USE_PRISMA) return apiGet<LeadActivity[]>(`/api/leads/${encodeURIComponent(leadId)}/activities`);
+  return latency(
+    leadActivities.filter((a) => a.leadId === leadId).sort((a, b) => b.createdAt.localeCompare(a.createdAt))
+  );
+}
+
+export async function addLeadActivity(input: {
+  leadId: string;
+  type: LeadActivityType;
+  note: string;
+  dueAt?: string | null;
+}): Promise<LeadActivity> {
+  if (USE_PRISMA)
+    return apiSend<LeadActivity>(`/api/leads/${encodeURIComponent(input.leadId)}/activities`, "POST", {
+      type: input.type,
+      note: input.note,
+      dueAt: input.dueAt ?? null,
+    });
+  const a: LeadActivity = {
+    id: uid("la"),
+    leadId: input.leadId,
+    type: input.type,
+    note: input.note,
+    dueAt: input.dueAt ?? null,
+    done: false,
+    createdAt: nowIso(),
+  };
+  leadActivities.unshift(a);
+  return latency(a);
+}
+
+export async function setLeadActivityDone(id: string, done: boolean): Promise<LeadActivity | undefined> {
+  if (USE_PRISMA) return apiSend<LeadActivity>(`/api/lead-activities/${encodeURIComponent(id)}`, "PATCH", { done });
+  const a = leadActivities.find((x) => x.id === id);
+  if (!a) return latency(undefined);
+  a.done = done;
+  return latency(a);
+}
+
+export async function deleteLeadActivity(id: string): Promise<void> {
+  if (USE_PRISMA) {
+    await apiSend(`/api/lead-activities/${encodeURIComponent(id)}`, "DELETE");
+    return;
+  }
+  const i = leadActivities.findIndex((x) => x.id === id);
+  if (i >= 0) leadActivities.splice(i, 1);
   await latency(null);
 }

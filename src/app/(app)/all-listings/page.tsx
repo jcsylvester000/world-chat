@@ -3,6 +3,7 @@
 import { useCallback, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import FiltersBar from "@/components/FiltersBar";
+import SaveSearchButton from "@/components/SaveSearchButton";
 import PropertyCard from "@/components/PropertyCard";
 import Spinner from "@/components/ui/Spinner";
 import EmptyState from "@/components/ui/EmptyState";
@@ -27,11 +28,14 @@ export default function AllListingsPage() {
 
   return (
     <div className="mx-auto max-w-6xl space-y-5 p-4 sm:p-6">
-      <div>
-        <h1 className="text-2xl font-bold">Browse listings</h1>
-        <p className="text-sm text-slate-500">
-          {totalCount} {totalCount === 1 ? "property" : "properties"} available
-        </p>
+      <div className="flex items-start justify-between gap-3">
+        <div>
+          <h1 className="text-2xl font-bold">Browse listings</h1>
+          <p className="text-sm text-slate-500">
+            {totalCount} {totalCount === 1 ? "property" : "properties"} available
+          </p>
+        </div>
+        <SaveSearchButton />
       </div>
 
       <FiltersBar />

@@ -10,6 +10,7 @@ import EmptyState from "@/components/ui/EmptyState";
 import { useAuthStore } from "@/lib/store/auth-store";
 import { usePropertyStore } from "@/lib/store/property-store";
 import { formatPeso } from "@/lib/utils";
+import BrokerVerification from "@/components/BrokerVerification";
 
 export default function AccountPage() {
   const user = useAuthStore((s) => s.user);
@@ -197,6 +198,7 @@ export default function AccountPage() {
           Manage privacy &amp; invite code →
         </Link>
       </section>
+      <BrokerVerification />
     </div>
   );
 }

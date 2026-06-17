@@ -1,9 +1,9 @@
 // ─── Prisma-backed Leads repository (SERVER ONLY) ───────────────
 // Mirrors the lead functions in src/lib/data/services.ts but reads/writes
 // PostgreSQL via Prisma. Imported only by the /api/leads route handlers.
-import type { Lead as DbLead, Prisma } from "@prisma/client";
+import type { Lead as DbLead, LeadActivity as DbLeadActivity, Prisma } from "@prisma/client";
 import { prisma } from "@/lib/db";
-import type { Lead, LeadMeta, LeadStatus } from "@/lib/types";
+import type { Lead, LeadActivity, LeadActivityType, LeadMeta, LeadStatus } from "@/lib/types";
 
 // ── mappers ──
 function toLead(row: DbLead): Lead {
@@ -67,8 +67,50 @@ export async function getLeadMeta(): Promise<LeadMeta> {
 }
 
 export async function listLeadsByOwner(ownerId: string): Promise<Lead[]> {
-  const rows = await prisma.lead.findMany({ where: { ownerId }, orderBy: { updatedAt: "desc" } });
-  return rows.map(toLead);
+  const rows = await prisma.lead.findMany({
+    where: { ownerId },
+    orderBy: { updatedAt: "desc" },
+    include: {
+      activities: { where: { done: false, dueAt: { not: null } }, orderBy: { dueAt: "asc" }, take: 1 },
+    },
+  });
+  return rows.map((r) => ({ ...toLead(r), nextActionAt: r.activities[0]?.dueAt?.toISOString() ?? null }));
+}
+
+// ── lead activities & follow-ups ──
+function toActivity(a: DbLeadActivity): LeadActivity {
+  return {
+    id: a.id,
+    leadId: a.leadId,
+    type: a.type as LeadActivityType,
+    note: a.note,
+    dueAt: a.dueAt ? a.dueAt.toISOString() : null,
+    done: a.done,
+    createdAt: a.createdAt.toISOString(),
+  };
+}
+
+export async function listLeadActivities(leadId: string): Promise<LeadActivity[]> {
+  const rows = await prisma.leadActivity.findMany({ where: { leadId }, orderBy: { createdAt: "desc" } });
+  return rows.map(toActivity);
+}
+
+export type AddActivityInput = { leadId: string; type: LeadActivityType; note: string; dueAt?: string | null };
+
+export async function addLeadActivity(input: AddActivityInput): Promise<LeadActivity> {
+  const row = await prisma.leadActivity.create({
+    data: { leadId: input.leadId, type: input.type, note: input.note, dueAt: input.dueAt ? new Date(input.dueAt) : null },
+  });
+  return toActivity(row);
+}
+
+export async function setLeadActivityDone(id: string, done: boolean): Promise<LeadActivity> {
+  const row = await prisma.leadActivity.update({ where: { id }, data: { done } });
+  return toActivity(row);
+}
+
+export async function deleteLeadActivity(id: string): Promise<void> {
+  await prisma.leadActivity.delete({ where: { id } });
 }
 
 export async function createLead(

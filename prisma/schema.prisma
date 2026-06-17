@@ -69,6 +69,9 @@ model Profile {
   planInterval           BillingInterval?
   planRenewsAt           DateTime?
   lastActiveAt           DateTime         @default(now())
+  verified               Boolean          @default(false)
+  company                String?
+  licenseNo              String?
 
   properties     Property[]
   messages       Message[]
@@ -84,6 +87,7 @@ model Profile {
   directMessages DirectMessage[]
   leads          Lead[]
   favorites      Favorite[]
+  savedSearches  SavedSearch[]
 
   createdAt DateTime @default(now())
 }
@@ -114,6 +118,7 @@ model Property {
   requests       PropertyRequest[]
   leads          Lead[]
   favoritedBy    Favorite[]
+  viewings       Viewing[]
 
   @@index([ownerId])
   @@index([location])
@@ -513,6 +518,7 @@ model Lead {
   lostReason        String?
   createdAt         DateTime   @default(now())
   updatedAt         DateTime   @updatedAt
+  activities        LeadActivity[]
 
   @@index([ownerId])
   @@index([stageId])
@@ -529,4 +535,90 @@ model Favorite {
 
   @@unique([userId, propertyId])
   @@index([userId])
+}
+
+// ─── Saved searches (filter sets + new-listing alerts) ─────────
+model SavedSearch {
+  id           String   @id @default(cuid())
+  user         Profile  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId       String
+  name         String
+  filters      Json
+  notify       Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  lastViewedAt DateTime @default(now())
+
+  @@index([userId])
+}
+
+// ─── Schedule a viewing ────────────────────────────────────────
+enum ViewingStatus {
+  requested
+  confirmed
+  declined
+  cancelled
+}
+
+model Viewing {
+  id             String        @id @default(cuid())
+  property       Property      @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  propertyId     String
+  propertyTitle  String
+  requesterId    String
+  requesterName  String
+  requesterEmail String
+  ownerId        String
+  ownerEmail     String
+  preferredAt    DateTime
+  message        String        @default("")
+  status         ViewingStatus @default(requested)
+  confirmedAt    DateTime?
+  ownerNote      String?
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+
+  @@index([ownerId])
+  @@index([requesterId])
+}
+
+// ─── Agent reviews & ratings ───────────────────────────────────
+model Review {
+  id            String   @id @default(cuid())
+  brokerId      String
+  brokerEmail   String
+  reviewerId    String
+  reviewerName  String
+  reviewerEmail String
+  communication Int
+  knowledge     Int
+  honesty       Int
+  overall       Float
+  comment       String   @default("")
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@unique([brokerId, reviewerId])
+  @@index([brokerId])
+}
+
+// ─── Lead activities & follow-up reminders ─────────────────────
+enum LeadActivityType {
+  call
+  email
+  meeting
+  note
+  task
+}
+
+model LeadActivity {
+  id        String           @id @default(cuid())
+  lead      Lead             @relation(fields: [leadId], references: [id], onDelete: Cascade)
+  leadId    String
+  type      LeadActivityType
+  note      String           @default("")
+  dueAt     DateTime?
+  done      Boolean          @default(false)
+  createdAt DateTime         @default(now())
+
+  @@index([leadId])
 }

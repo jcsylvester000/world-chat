@@ -16,6 +16,9 @@ import { useChatStore } from "@/lib/store/chat-store";
 import { findProfileById, findVisiblePropertyById, getRequest, hasAccess } from "@/lib/data/services";
 import { displayName, formatPeso, formatDate } from "@/lib/utils";
 import FavoriteButton from "@/components/FavoriteButton";
+import RequestViewingButton from "@/components/RequestViewingButton";
+import VerifiedBadge from "@/components/VerifiedBadge";
+import BrokerReviews from "@/components/BrokerReviews";
 import type { Profile, Property, PropertyRequest } from "@/lib/types";
 
 const PropertyMap = dynamic(() => import("@/components/PropertyMap"), {
@@ -224,12 +227,21 @@ export default function PropertyDetailPage() {
             <div className="mt-3 flex items-center gap-3">
               <Avatar email={property.ownerEmail} size={44} />
               <div>
-                <p className="font-medium text-ink">{ownerName}</p>
+                <div className="flex items-center gap-1.5">
+                  <p className="font-medium text-ink">{ownerName}</p>
+                  <VerifiedBadge email={property.ownerEmail} />
+                </div>
                 <p className="text-xs text-slate-500">{property.ownerEmail}</p>
               </div>
             </div>
-            {!isOwner && <button onClick={dmOwner} className="btn-primary mt-4 w-full">💬 Message owner</button>}
+            {!isOwner && (
+              <>
+                <button onClick={dmOwner} className="btn-primary mt-4 w-full">💬 Message owner</button>
+                <RequestViewingButton property={property} />
+              </>
+            )}
             {isOwner && <Link href="/my-listings?tab=requests" className="btn-outline mt-4 block w-full text-center">View requests</Link>}
+            <BrokerReviews property={property} />
           </div>
         </aside>
       </div>
