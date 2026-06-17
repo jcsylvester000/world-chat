@@ -42,6 +42,7 @@ export default function MessageList({
   onToggleReaction,
   onEdit,
   onDelete,
+  newMessageAfter,
 }: {
   messages: ChatMsg[];
   currentUserId: string;
@@ -52,7 +53,9 @@ export default function MessageList({
   onToggleReaction?: (messageId: string, emoji: string) => void;
   onEdit?: (messageId: string, content: string) => void;
   onDelete?: (messageId: string) => void;
+  newMessageAfter?: string | null;
 }) {
+  let dividerPlaced = false;
   return (
     <>
       {messages.map((m, i) => {
@@ -65,8 +68,23 @@ export default function MessageList({
           prev.authorId === m.authorId &&
           !m.replyToPreview &&
           new Date(m.createdAt).getTime() - new Date(prev.createdAt).getTime() < GROUP_WINDOW_MS;
+        const showDivider =
+          !dividerPlaced &&
+          newMessageAfter != null &&
+          m.authorId !== currentUserId &&
+          m.createdAt > newMessageAfter;
+        if (showDivider) dividerPlaced = true;
         return (
           <div key={m.id}>
+            {showDivider && (
+              <div className="my-3 flex items-center gap-3">
+                <div className="h-px flex-1 bg-rose-300" />
+                <span className="rounded-full bg-rose-500 px-2 py-0.5 text-[11px] font-semibold text-white">
+                  New messages
+                </span>
+                <div className="h-px flex-1 bg-rose-300" />
+              </div>
+            )}
             {newDay && (
               <div className="my-3 flex items-center gap-3">
                 <div className="h-px flex-1 bg-line" />

@@ -39,6 +39,7 @@ export default function GroupDetailModal({
   const toggleReaction = useChatStore((s) => s.toggleReaction);
   const editGroupMessage = useChatStore((s) => s.editGroupMessage);
   const deleteGroupMessage = useChatStore((s) => s.deleteGroupMessage);
+  const markRead = useChatStore((s) => s.markRead);
 
   const members = useMemo(
     () => membersByGroup[group.id] ?? [],
@@ -51,6 +52,7 @@ export default function GroupDetailModal({
   const [tab, setTab] = useState<"chat" | "members">("chat");
   const [groupName, setGroupName] = useState(group.name);
   const [reply, setReply] = useState<ReplyTarget | null>(null);
+  const [dividerAt, setDividerAt] = useState<string | null>(null);
   const mentionSource = async (q: string) => {
     const ql = q.toLowerCase();
     return members
@@ -63,6 +65,16 @@ export default function GroupDetailModal({
     fetchGroupMembers(group.id);
     fetchGroupMessages(group.id);
   }, [group.id, user, fetchGroupMembers, fetchGroupMessages]);
+
+  // capture unread divider + mark read on open; keep read while viewing
+  useEffect(() => {
+    const key = "group:" + group.id;
+    setDividerAt(useChatStore.getState().lastReadByConv[key] ?? null);
+    markRead(key);
+  }, [group.id, markRead]);
+  useEffect(() => {
+    markRead("group:" + group.id);
+  }, [group.id, messages.length, markRead]);
 
   const isOwner = group.createdByEmail === user?.email;
   const available = useMemo(
@@ -140,6 +152,7 @@ export default function GroupDetailModal({
                 onEdit={(id, content) => editGroupMessage(group.id, id, content)}
                 onDelete={(id) => deleteGroupMessage(group.id, id)}
                 onReply={(m) => setReply({ id: m.id, author: m.authorEmail, preview: previewOf(m) })}
+                newMessageAfter={dividerAt}
               />
             )}
           </div>

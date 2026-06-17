@@ -48,6 +48,7 @@ interface ChatState {
   threads: DirectThread[];
   messagesByThread: Record<string, DirectMessage[]>;
   reactionsByMessage: Record<string, Reaction[]>;
+  lastReadByConv: Record<string, string>; // conversation key → ISO of last read
 
   fetchGroups: (userId?: string) => Promise<void>;
   fetchWorld: () => Promise<void>;
@@ -81,6 +82,7 @@ interface ChatState {
   ) => Promise<void>;
 
   toggleReaction: (messageId: string, emoji: string, user: Profile) => void;
+  markRead: (convKey: string) => void;
 
   editGroupMessage: (groupId: string, id: string, content: string) => Promise<void>;
   deleteGroupMessage: (groupId: string, id: string) => Promise<void>;
@@ -99,6 +101,7 @@ export const useChatStore = create<ChatState>((set, get) => ({
   threads: [],
   messagesByThread: {},
   reactionsByMessage: {},
+  lastReadByConv: {},
 
   async fetchGroups(userId) {
     const id = userId ?? get().groupsUserId;
@@ -217,6 +220,10 @@ export const useChatStore = create<ChatState>((set, get) => ({
   async deleteDirect(threadId, id) {
     await deleteDirectMessage(id);
     await get().fetchDirectMessages(threadId);
+  },
+
+  markRead(convKey) {
+    set({ lastReadByConv: { ...get().lastReadByConv, [convKey]: new Date().toISOString() } });
   },
 
   toggleReaction(messageId, emoji, user) {

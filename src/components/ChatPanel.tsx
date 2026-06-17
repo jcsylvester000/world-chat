@@ -52,6 +52,10 @@ export default function ChatPanel({
   const deleteWorld = useChatStore((s) => s.deleteWorld);
   const editDirect = useChatStore((s) => s.editDirect);
   const deleteDirect = useChatStore((s) => s.deleteDirect);
+  const messagesByGroup = useChatStore((s) => s.messagesByGroup);
+  const fetchGroupMessages = useChatStore((s) => s.fetchGroupMessages);
+  const lastReadByConv = useChatStore((s) => s.lastReadByConv);
+  const markRead = useChatStore((s) => s.markRead);
 
   const [tab, setTab] = useState<Tab>(openDmUserId ? "direct" : defaultTab);
   const [activeThreadId, setActiveThreadId] = useState<string | null>(null);
@@ -64,6 +68,8 @@ export default function ChatPanel({
   const dmRef = useRef<HTMLDivElement>(null);
   const [dmReply, setDmReply] = useState<ReplyTarget | null>(null);
   const [worldReply, setWorldReply] = useState<ReplyTarget | null>(null);
+  const [dmDividerAt, setDmDividerAt] = useState<string | null>(null);
+  const [worldDividerAt, setWorldDividerAt] = useState<string | null>(null);
 
   useEffect(() => {
     if (!user) return;
@@ -96,8 +102,48 @@ export default function ChatPanel({
     dmRef.current?.scrollTo({ top: dmRef.current.scrollHeight });
   }, [dmMessages.length]);
 
+  // prefetch messages for all threads + groups so unread badges work
+  useEffect(() => {
+    threads.forEach((t) => fetchDirectMessages(t.id));
+  }, [threads, fetchDirectMessages]);
+  useEffect(() => {
+    groups.forEach((g) => fetchGroupMessages(g.id));
+  }, [groups, fetchGroupMessages]);
+
+  // DM: capture divider + mark read on open, keep read while viewing
+  useEffect(() => {
+    if (!activeThreadId) { setDmDividerAt(null); return; }
+    const key = "dm:" + activeThreadId;
+    setDmDividerAt(useChatStore.getState().lastReadByConv[key] ?? null);
+    markRead(key);
+  }, [activeThreadId, markRead]);
+  useEffect(() => {
+    if (activeThreadId) markRead("dm:" + activeThreadId);
+  }, [activeThreadId, dmMessages.length, markRead]);
+
+  // World: capture divider + mark read on open, keep read while viewing
+  useEffect(() => {
+    if (tab !== "world") { setWorldDividerAt(null); return; }
+    setWorldDividerAt(useChatStore.getState().lastReadByConv["world"] ?? null);
+    markRead("world");
+  }, [tab, markRead]);
+  useEffect(() => {
+    if (tab === "world") markRead("world");
+  }, [tab, worldMessages.length, markRead]);
+
   const activeThread = useMemo(() => threads.find((t) => t.id === activeThreadId) ?? null, [threads, activeThreadId]);
   const activeOther = activeThread && user ? otherOf(activeThread, user.id) : null;
+  const unreadCount = (items: { authorId: string; createdAt: string }[], key: string) => {
+    const t = lastReadByConv[key];
+    return items.reduce((n, m) => n + (m.authorId !== user?.id && (!t || m.createdAt > t) ? 1 : 0), 0);
+  };
+  const threadUnread = (th: DirectThread) =>
+    unreadCount((messagesByThread[th.id] ?? []).map((m) => ({ authorId: m.senderId, createdAt: m.createdAt })), "dm:" + th.id);
+  const groupUnread = (g: ChatGroup) =>
+    unreadCount((messagesByGroup[g.id] ?? []).map((m) => ({ authorId: m.userId, createdAt: m.createdAt })), "group:" + g.id);
+  const worldUnread = unreadCount(worldMessages.map((m) => ({ authorId: m.userId, createdAt: m.createdAt })), "world");
+  const directUnread = threads.reduce((n, th) => n + threadUnread(th), 0);
+  const groupsUnread = groups.reduce((n, g) => n + groupUnread(g), 0);
   const mentionSource = async (q: string) => {
     if (!user) return [];
     const rs = await searchDiscoverableUsers(q, user.id);
@@ -143,11 +189,15 @@ export default function ChatPanel({
   return (
     <div className="flex h-full flex-col overflow-hidden rounded-2xl border border-line bg-white shadow-sm">
       <div className="flex border-b border-line p-1">
-        {(["direct", "groups", "world"] as const).map((t) => (
-          <button key={t} onClick={() => { setTab(t); if (t !== "direct") setActiveThreadId(null); setDmReply(null); setWorldReply(null); }} className={cn("flex-1 rounded-lg py-2 text-sm font-medium transition", tab === t ? "bg-primary-50 text-primary" : "text-slate-500 hover:bg-slate-50")}>
+        {(["direct", "groups", "world"] as const).map((t) => {
+          const tu = t === "direct" ? directUnread : t === "groups" ? groupsUnread : worldUnread;
+          return (
+          <button key={t} onClick={() => { setTab(t); if (t !== "direct") setActiveThreadId(null); setDmReply(null); setWorldReply(null); }} className={cn("flex-1 rounded-lg py-2 text-sm font-medium transition inline-flex items-center justify-center gap-1.5", tab === t ? "bg-primary-50 text-primary" : "text-slate-500 hover:bg-slate-50")}>
             {t === "direct" ? "Direct" : t === "groups" ? "Groups" : "World"}
+            {tu > 0 && <span className="inline-flex min-w-[18px] items-center justify-center rounded-full bg-rose-500 px-1.5 text-[10px] font-semibold text-white">{tu}</span>}
           </button>
-        ))}
+          );
+        })}
       </div>
 
       {/* DIRECT */}
@@ -182,6 +232,7 @@ export default function ChatPanel({
                 onEdit={(id, content) => editDirect(activeThread.id, id, content)}
                 onDelete={(id) => deleteDirect(activeThread.id, id)}
                 onReply={(m) => setDmReply({ id: m.id, author: m.authorEmail, preview: previewOf(m) })}
+                newMessageAfter={dmDividerAt}
               />
             </div>
             <ChatComposer
@@ -216,6 +267,7 @@ export default function ChatPanel({
                             <p className="truncate text-sm font-medium text-ink">{displayName(o.email)}</p>
                             <p className="truncate text-xs text-slate-500">{last ? (last.contentType === "image" ? "📷 Photo" : last.content) : "Say hello 👋"}</p>
                           </div>
+                          {threadUnread(t) > 0 && <span className="inline-flex min-w-[18px] items-center justify-center rounded-full bg-rose-500 px-1.5 text-[10px] font-semibold text-white">{threadUnread(t)}</span>}
                         </button>
                       </li>
                     );
@@ -239,7 +291,8 @@ export default function ChatPanel({
               <li key={g.id}>
                 <button onClick={() => setActiveGroup(g)} className="flex w-full items-center gap-3 rounded-lg px-2 py-2 text-left hover:bg-slate-50">
                   <span className="grid h-9 w-9 place-items-center rounded-lg bg-primary-50 text-sm font-semibold text-primary">{g.name.charAt(0).toUpperCase()}</span>
-                  <span className="text-sm font-medium text-ink">{g.name}</span>
+                  <span className="flex-1 text-sm font-medium text-ink">{g.name}</span>
+                  {groupUnread(g) > 0 && <span className="inline-flex min-w-[18px] items-center justify-center rounded-full bg-rose-500 px-1.5 text-[10px] font-semibold text-white">{groupUnread(g)}</span>}
                 </button>
               </li>
             ))}
@@ -275,6 +328,7 @@ export default function ChatPanel({
               onEdit={(id, content) => editWorld(id, content)}
               onDelete={(id) => deleteWorld(id)}
               onReply={(m) => setWorldReply({ id: m.id, author: m.authorEmail, preview: previewOf(m) })}
+              newMessageAfter={worldDividerAt}
             />
           </div>
           <ChatComposer
