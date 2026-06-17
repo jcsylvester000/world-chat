@@ -90,6 +90,7 @@ async function main() {
         atsFilename: p.ats?.filename ?? null,
         atsVisibility: p.atsVisibility,
         requiresLOI: p.requiresLOI,
+        views: p.views ?? 0,
         createdAt: new Date(p.createdAt),
         attachments: {
           create: p.attachments.map((a) => ({ url: a.url, filename: a.filename })),

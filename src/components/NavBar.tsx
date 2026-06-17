@@ -112,6 +112,7 @@ export default function NavBar() {
                   { label: "Account Settings", href: "/account" },
                   { label: "My Listings", href: "/my-listings" },
                   { label: "Viewings", href: "/viewings" },
+                  { label: "Analytics", href: "/analytics" },
                   { label: "Messages", href: "/messages" },
                   { label: "People", href: "/people" },
                   { label: "Subscription", href: "/subscription" },

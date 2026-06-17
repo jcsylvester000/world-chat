@@ -13,7 +13,7 @@ import RequestModal from "@/components/RequestModal";
 import DocumentModal from "@/components/DocumentModal";
 import { useAuthStore } from "@/lib/store/auth-store";
 import { useChatStore } from "@/lib/store/chat-store";
-import { findProfileById, findVisiblePropertyById, getRequest, hasAccess } from "@/lib/data/services";
+import { findProfileById, findVisiblePropertyById, getRequest, hasAccess, incrementPropertyViews } from "@/lib/data/services";
 import { displayName, formatPeso, formatDate } from "@/lib/utils";
 import FavoriteButton from "@/components/FavoriteButton";
 import RequestViewingButton from "@/components/RequestViewingButton";
@@ -37,6 +37,12 @@ export default function PropertyDetailPage() {
   const [active, setActive] = useState(0);
   const [preview, setPreview] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+
+  // Count a detail-page view (non-owners) for broker analytics.
+  useEffect(() => {
+    if (property && (!user || property.ownerId !== user.id)) incrementPropertyViews(property.id);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [property?.id, user?.id]);
 
   const [docsAccess, setDocsAccess] = useState(false);
   const [docsReq, setDocsReq] = useState<PropertyRequest | null>(null);

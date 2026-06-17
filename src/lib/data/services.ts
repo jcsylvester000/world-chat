@@ -75,6 +75,7 @@ import {
   type VerificationRequest,
   type Review,
   type BrokerReviewsBundle,
+  type BrokerAnalytics,
   type LeadActivity,
   type LeadActivityType,
 } from "@/lib/types";
@@ -1636,4 +1637,35 @@ export async function convertRequestToLead(
   });
   req.leadId = lead.id;
   return lead;
+}
+
+// ─── Broker analytics ───────────────────────────────────────────
+export async function getBrokerAnalytics(ownerId: string): Promise<BrokerAnalytics> {
+  if (USE_PRISMA) return apiGet<BrokerAnalytics>(`/api/analytics?ownerId=${encodeURIComponent(ownerId)}`);
+  const props = properties.filter((p) => p.ownerId === ownerId);
+  const listings = props.map((p) => ({
+    id: p.id,
+    title: p.title,
+    price: p.price,
+    views: p.views ?? 0,
+    saves: favorites.filter((f) => f.propertyId === p.id).length,
+    viewings: viewings.filter((v) => v.propertyId === p.id).length,
+  }));
+  const funnel = [...leadStages]
+    .sort((a, b) => a.sortOrder - b.sortOrder)
+    .map((st) => {
+      const ls = leads.filter((l) => l.ownerId === ownerId && l.stageId === st.id);
+      return { stageId: st.id, stageName: st.name, count: ls.length, value: ls.reduce((s, l) => s + l.value, 0) };
+    });
+  return latency({ listings, funnel });
+}
+
+export async function incrementPropertyViews(id: string): Promise<void> {
+  if (USE_PRISMA) {
+    await apiSend(`/api/properties/${encodeURIComponent(id)}/view`, "POST");
+    return;
+  }
+  const p = properties.find((x) => x.id === id);
+  if (p) p.views = (p.views ?? 0) + 1;
+  await latency(null);
 }

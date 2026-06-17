@@ -135,6 +135,7 @@ export const profiles: Profile[] = [
 export const properties: Property[] = [
   {
     id: "p-1", ownerId: "u-maria", ownerEmail: "maria.santos@primeland.ph",
+    views: 340,
     title: "Premium Makati CBD Office Floor",
     description:
       "Full grade-A office floor in the Makati CBD with sweeping skyline views. Fitted with central HVAC, backup power, and 24/7 building security. Move-in ready with flexible turnover.",
@@ -150,6 +151,7 @@ export const properties: Property[] = [
   },
   {
     id: "p-2", ownerId: "u-maria", ownerEmail: "maria.santos@primeland.ph",
+    views: 210,
     title: "BGC Premium Mixed-Use Corner Lot",
     description:
       "Rare corner lot zoned for mixed-use development in Bonifacio Global City. Excellent foot traffic, transit access, and frontage on two major roads. Price disclosed to qualified buyers.",
@@ -164,6 +166,7 @@ export const properties: Property[] = [
   },
   {
     id: "p-3", ownerId: "u-maria", ownerEmail: "maria.santos@primeland.ph",
+    views: 180,
     title: "Ortigas Center Retail Arcade",
     description:
       "Ground-floor retail arcade in Ortigas Center with five units, four currently leased to F&B and service tenants. Stable yield with professional management in place.",
@@ -179,6 +182,7 @@ export const properties: Property[] = [
   },
   {
     id: "p-4", ownerId: "u-rafael", ownerEmail: "rafael@cruzrealty.ph",
+    views: 150,
     title: "Cebu IT Park Office Tower Floors",
     description:
       "Two contiguous office floors in a PEZA-accredited tower at Cebu IT Park. Ideal for BPO or shared-service operations, with redundant power and fiber-ready risers.",
@@ -194,6 +198,7 @@ export const properties: Property[] = [
   },
   {
     id: "p-5", ownerId: "u-rafael", ownerEmail: "rafael@cruzrealty.ph",
+    views: 90,
     title: "Davao Distribution Warehouse",
     description:
       "Single-tenant distribution warehouse near the Davao port district. High clearance, wide truck apron, and direct access to the national highway. Sold as-is.",
@@ -208,6 +213,7 @@ export const properties: Property[] = [
   },
   {
     id: "p-6", ownerId: "u-rafael", ownerEmail: "rafael@cruzrealty.ph",
+    views: 130,
     title: "Clark Freeport Logistics Hub",
     description:
       "Modern logistics hub inside the Clark Freeport Zone with dock levelers, ESFR sprinklers, and heavy power capacity. Strategic for north-Luzon distribution.",
@@ -223,6 +229,7 @@ export const properties: Property[] = [
   },
   {
     id: "p-7", ownerId: "u-bianca", ownerEmail: "bianca.lim@metroestate.ph",
+    views: 110,
     title: "Alabang Corporate Office Unit",
     description:
       "Fitted corporate office unit in Filinvest Alabang. Open-plan layout with meeting rooms and a pantry, ready for immediate occupancy. Ample parking allocation.",
@@ -237,6 +244,7 @@ export const properties: Property[] = [
   },
   {
     id: "p-8", ownerId: "u-bianca", ownerEmail: "bianca.lim@metroestate.ph",
+    views: 95,
     title: "Tagaytay Ridge Agricultural Estate",
     description:
       "2.5 hectares of titled agricultural land along the Tagaytay ridge with cool climate and lake views. Suited to agri-tourism, a private estate, or a boutique resort.",
@@ -252,6 +260,7 @@ export const properties: Property[] = [
   },
   {
     id: "p-9", ownerId: "u-james", ownerEmail: "james.reyes@reyesindustrial.ph",
+    views: 160,
     title: "Calamba Logistics Warehouse (10,000 sqm)",
     description:
       "10,000 sqm warehouse with high clearance and dock levelers, 45 minutes from the port. Heavy power capacity and a wide truck apron for trailer staging.",
@@ -267,6 +276,7 @@ export const properties: Property[] = [
   },
   {
     id: "p-10", ownerId: "u-james", ownerEmail: "james.reyes@reyesindustrial.ph",
+    views: 70,
     title: "Meycauayan Industrial Warehouse",
     description:
       "Mid-size industrial warehouse in Meycauayan, Bulacan with mezzanine office and three-phase power. Close to NLEX for north-bound distribution. Sold as-is.",
@@ -281,6 +291,7 @@ export const properties: Property[] = [
   },
   {
     id: "p-11", ownerId: "u-james", ownerEmail: "james.reyes@reyesindustrial.ph",
+    views: 140,
     title: "EDSA Cubao Gas Station + Convenience Store",
     description:
       "Operating gas station along EDSA in Cubao with an attached convenience store and a long-term fuel supply contract. Strong daily volume on a high-traffic corner.",
@@ -296,6 +307,7 @@ export const properties: Property[] = [
   },
   {
     id: "p-12", ownerId: "u-grace", ownerEmail: "grace.tan@tanprop.ph",
+    views: 85,
     title: "Cubao Commercial Retail Block",
     description:
       "Two-storey commercial retail block near Araneta City with strong pedestrian flow. Mix of retail and food tenants on flexible lease terms.",
@@ -310,6 +322,7 @@ export const properties: Property[] = [
   },
   {
     id: "p-13", ownerId: "u-grace", ownerEmail: "grace.tan@tanprop.ph",
+    views: 120,
     title: "Kapitolyo Mixed-Use Building",
     description:
       "Four-storey mixed-use building in Kapitolyo, Pasig — ground-floor retail with offices above. Fully tenanted with upside on lease renewals.",
@@ -325,6 +338,7 @@ export const properties: Property[] = [
   },
   {
     id: "p-14", ownerId: "u-paolo", ownerEmail: "paolo@vistacommercial.ph",
+    views: 60,
     title: "Subic Bay Freeport Warehouse",
     description:
       "Freeport-zone warehouse in Subic Bay with deep-water port proximity and duty-free advantages. Suited to import/export and light assembly operations.",
@@ -339,6 +353,7 @@ export const properties: Property[] = [
   },
   {
     id: "p-15", ownerId: "u-lena", ownerEmail: "lena.ocampo@gmail.com",
+    views: 40,
     title: "Lipa Batangas Agricultural Lot",
     description:
       "Titled agricultural lot in Lipa, Batangas with gentle terrain and road frontage. Suitable for farming, a rest house, or a future subdivision. Price on request.",
@@ -353,6 +368,7 @@ export const properties: Property[] = [
   },
   {
     id: "p-16", ownerId: "u-sofia", ownerEmail: "sofia.andrada@gmail.com",
+    views: 55,
     title: "Antipolo Roadside Retail Lot",
     description:
       "Roadside commercial lot along a busy Antipolo route, ideal for a convenience store, coffee shop, or small showroom. Clean documents and ready to transfer.",
@@ -367,6 +383,7 @@ export const properties: Property[] = [
   },
   {
     id: "p-17", ownerId: "u-sofia", ownerEmail: "sofia.andrada@gmail.com",
+    views: 30,
     title: "Rizal Agri-Residential Lot",
     description:
       "Quiet agri-residential lot in the Rizal highlands with cool air and a partial city view. Great for a weekend farm or a small homestead.",

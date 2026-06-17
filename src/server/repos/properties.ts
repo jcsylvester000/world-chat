@@ -69,6 +69,7 @@ export function toProperty(row: Row): Property {
     ats: row.atsUrl && row.atsFilename ? { url: row.atsUrl, filename: row.atsFilename } : null,
     atsVisibility: row.atsVisibility as AtsVisibility,
     requiresLOI: row.requiresLOI,
+    views: row.views,
   };
 }
 
@@ -208,4 +209,8 @@ export async function updateProperty(
 
 export async function deleteProperty(id: string): Promise<void> {
   await prisma.property.delete({ where: { id } });
+}
+
+export async function incrementPropertyViews(id: string): Promise<void> {
+  await prisma.property.update({ where: { id }, data: { views: { increment: 1 } } }).catch(() => {});
 }

@@ -92,6 +92,7 @@ export interface Property {
   ats: AtsDoc | null;
   atsVisibility: AtsVisibility;
   requiresLOI: boolean; // require a Letter of Intent to view the ATS
+  views?: number; // detail-page view count (analytics)
 }
 
 export interface ChatGroup {
@@ -497,4 +498,10 @@ export interface LeadActivity {
   dueAt: string | null; // set for follow-up tasks
   done: boolean;
   createdAt: string;
+}
+
+// ─── Broker analytics ───────────────────────────────────────────
+export interface BrokerAnalytics {
+  listings: { id: string; title: string; price: number; views: number; saves: number; viewings: number }[];
+  funnel: { stageId: string; stageName: string; count: number; value: number }[];
 }

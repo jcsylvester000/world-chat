@@ -112,6 +112,7 @@ model Property {
   atsFilename     String?
   atsVisibility   AtsVisibility @default(hidden)
   requiresLOI     Boolean      @default(false)
+  views           Int          @default(0)
   createdAt       DateTime     @default(now())
 
   attachments    PropertyAttachment[]
