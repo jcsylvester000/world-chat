@@ -35,11 +35,13 @@ export default function MessageList({
   currentUserId,
   showAuthors = true,
   onReply,
+  myHandle,
 }: {
   messages: ChatMsg[];
   currentUserId: string;
   showAuthors?: boolean;
   onReply?: (m: ChatMsg) => void;
+  myHandle?: string;
 }) {
   return (
     <>
@@ -77,6 +79,7 @@ export default function MessageList({
                 replyToAuthor={m.replyToAuthor}
                 replyToPreview={m.replyToPreview}
                 onReply={onReply ? () => onReply(m) : undefined}
+                myHandle={myHandle}
               />
             </div>
           </div>

@@ -6,11 +6,11 @@ import { cn } from "@/lib/utils";
 // Lightweight, XSS-safe markdown renderer for chat messages. Builds React
 // nodes directly (no dangerouslySetInnerHTML). Supports a common subset:
 // **bold**, *italic* / _italic_, `code`, ~~strike~~, [text](url), bare URLs,
-// > blockquotes, - / * bullet lists, and ``` fenced code blocks.
+// @mentions, > blockquotes, - / * bullet lists, and ``` fenced code blocks.
 const INLINE =
-  /(`[^`]+`)|(\*\*[^*]+\*\*)|(~~[^~]+~~)|(\*[^*]+\*)|(_[^_]+_)|(\[[^\]]+\]\([^)]+\))|(https?:\/\/[^\s)]+)/g;
+  /(`[^`]+`)|(@[A-Za-z0-9_.]+)|(\*\*[^*]+\*\*)|(~~[^~]+~~)|(\*[^*]+\*)|(_[^_]+_)|(\[[^\]]+\]\([^)]+\))|(https?:\/\/[^\s)]+)/g;
 
-function inline(text: string, mine: boolean): ReactNode[] {
+function inline(text: string, mine: boolean, myHandle?: string): ReactNode[] {
   const out: ReactNode[] = [];
   let last = 0;
   let k = 0;
@@ -25,6 +25,24 @@ function inline(text: string, mine: boolean): ReactNode[] {
         <code key={k++} className="rounded bg-black/10 px-1 font-mono text-[0.85em]">
           {tok.slice(1, -1)}
         </code>
+      );
+    } else if (tok.startsWith("@")) {
+      const handle = tok.slice(1);
+      const me = !!myHandle && handle.toLowerCase() === myHandle.toLowerCase();
+      out.push(
+        <span
+          key={k++}
+          className={cn(
+            "rounded px-1 font-medium",
+            me
+              ? "bg-amber-200 text-amber-900"
+              : mine
+                ? "bg-white/25 text-white"
+                : "bg-primary-50 text-primary"
+          )}
+        >
+          {tok}
+        </span>
       );
     } else if (tok.startsWith("**")) {
       out.push(<strong key={k++}>{tok.slice(2, -2)}</strong>);
@@ -53,7 +71,15 @@ function inline(text: string, mine: boolean): ReactNode[] {
   return out;
 }
 
-export default function MessageText({ content, mine = false }: { content: string; mine?: boolean }) {
+export default function MessageText({
+  content,
+  mine = false,
+  myHandle,
+}: {
+  content: string;
+  mine?: boolean;
+  myHandle?: string;
+}) {
   const lines = content.split("\n");
   const blocks: ReactNode[] = [];
   let i = 0;
@@ -80,7 +106,7 @@ export default function MessageText({ content, mine = false }: { content: string
       blocks.push(
         <blockquote key={key++} className="my-1 border-l-2 border-current/40 pl-2 opacity-90">
           {buf.map((b, bi) => (
-            <div key={bi}>{inline(b, mine)}</div>
+            <div key={bi}>{inline(b, mine, myHandle)}</div>
           ))}
         </blockquote>
       );
@@ -92,7 +118,7 @@ export default function MessageText({ content, mine = false }: { content: string
       blocks.push(
         <ul key={key++} className="my-1 list-disc pl-5">
           {items.map((it, ii) => (
-            <li key={ii}>{inline(it, mine)}</li>
+            <li key={ii}>{inline(it, mine, myHandle)}</li>
           ))}
         </ul>
       );
@@ -105,7 +131,7 @@ export default function MessageText({ content, mine = false }: { content: string
         {para.map((p, pi) => (
           <Fragment key={pi}>
             {pi > 0 && <br />}
-            {inline(p, mine)}
+            {inline(p, mine, myHandle)}
           </Fragment>
         ))}
       </p>

@@ -47,6 +47,12 @@ export default function GroupDetailModal({
   const [tab, setTab] = useState<"chat" | "members">("chat");
   const [groupName, setGroupName] = useState(group.name);
   const [reply, setReply] = useState<ReplyTarget | null>(null);
+  const mentionSource = async (q: string) => {
+    const ql = q.toLowerCase();
+    return members
+      .filter((p) => p.id !== user?.id && (p.username.toLowerCase().includes(ql) || p.email.toLowerCase().includes(ql)))
+      .map((p) => ({ id: p.id, username: p.username, email: p.email }));
+  };
 
   useEffect(() => {
     if (user) listAddableUsers(user.id).then(setAllUsers);
@@ -122,6 +128,7 @@ export default function GroupDetailModal({
                   replyToPreview: m.replyToPreview,
                 }))}
                 currentUserId={user.id}
+                myHandle={user.username}
                 onReply={(m) => setReply({ id: m.id, author: m.authorEmail, preview: previewOf(m) })}
               />
             )}
@@ -134,6 +141,7 @@ export default function GroupDetailModal({
               }}
               replyTarget={reply}
               onCancelReply={() => setReply(null)}
+              mentionSource={mentionSource}
             />
           )}
         </div>

@@ -92,6 +92,11 @@ export default function ChatPanel({
 
   const activeThread = useMemo(() => threads.find((t) => t.id === activeThreadId) ?? null, [threads, activeThreadId]);
   const activeOther = activeThread && user ? otherOf(activeThread, user.id) : null;
+  const mentionSource = async (q: string) => {
+    if (!user) return [];
+    const rs = await searchDiscoverableUsers(q, user.id);
+    return rs.map((p) => ({ id: p.id, username: p.username, email: p.email }));
+  };
 
   const openNewDm = async () => {
     if (!user) return;
@@ -163,6 +168,7 @@ export default function ChatPanel({
                 }))}
                 currentUserId={user.id}
                 showAuthors={false}
+                myHandle={user.username}
                 onReply={(m) => setDmReply({ id: m.id, author: m.authorEmail, preview: previewOf(m) })}
               />
             </div>
@@ -173,6 +179,7 @@ export default function ChatPanel({
               }}
               replyTarget={dmReply}
               onCancelReply={() => setDmReply(null)}
+              mentionSource={mentionSource}
             />
           </div>
         ) : (
@@ -248,6 +255,7 @@ export default function ChatPanel({
                 replyToPreview: m.replyToPreview,
               }))}
               currentUserId={user.id}
+              myHandle={user.username}
               onReply={(m) => setWorldReply({ id: m.id, author: m.authorEmail, preview: previewOf(m) })}
             />
           </div>
@@ -259,6 +267,7 @@ export default function ChatPanel({
             placeholder="Message everyone…"
             replyTarget={worldReply}
             onCancelReply={() => setWorldReply(null)}
+            mentionSource={mentionSource}
           />
         </div>
       )}

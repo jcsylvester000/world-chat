@@ -17,6 +17,7 @@ export default function ChatBubble({
   replyToAuthor,
   replyToPreview,
   onReply,
+  myHandle,
 }: {
   email: string;
   content: string;
@@ -29,8 +30,14 @@ export default function ChatBubble({
   replyToAuthor?: string;
   replyToPreview?: string;
   onReply?: () => void;
+  myHandle?: string;
 }) {
   const hasHeader = showAuthor && !mine && !continuation;
+  const mentionsMe =
+    !mine &&
+    !!myHandle &&
+    contentType === "text" &&
+    new RegExp(`@${myHandle.replace(/\./g, "\\.")}\\b`, "i").test(content);
   return (
     <div className={cn("group flex items-center gap-2", mine && "flex-row-reverse")}>
       {!mine &&
@@ -48,7 +55,8 @@ export default function ChatBubble({
             "inline-block rounded-2xl px-3 py-2 text-left text-sm",
             mine
               ? "rounded-br-sm bg-primary text-white"
-              : "rounded-bl-sm bg-white text-ink shadow-sm ring-1 ring-line"
+              : "rounded-bl-sm bg-white text-ink shadow-sm ring-1 ring-line",
+            mentionsMe && "bg-amber-50 ring-amber-300"
           )}
         >
           {replyToPreview && (
@@ -70,7 +78,7 @@ export default function ChatBubble({
           ) : contentType === "attachment" ? (
             <span className="inline-flex items-center gap-1">📎 {filename ?? "attachment"}</span>
           ) : (
-            <MessageText content={content} mine={mine} />
+            <MessageText content={content} mine={mine} myHandle={myHandle} />
           )}
         </div>
         {!continuation && <p className="mt-0.5 text-[10px] text-slate-400">{formatTime(createdAt)}</p>}
