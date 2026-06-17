@@ -48,6 +48,10 @@ export default function ChatPanel({
   const openThread = useChatStore((s) => s.openThread);
   const reactionsByMessage = useChatStore((s) => s.reactionsByMessage);
   const toggleReaction = useChatStore((s) => s.toggleReaction);
+  const editWorld = useChatStore((s) => s.editWorld);
+  const deleteWorld = useChatStore((s) => s.deleteWorld);
+  const editDirect = useChatStore((s) => s.editDirect);
+  const deleteDirect = useChatStore((s) => s.deleteDirect);
 
   const [tab, setTab] = useState<Tab>(openDmUserId ? "direct" : defaultTab);
   const [activeThreadId, setActiveThreadId] = useState<string | null>(null);
@@ -167,12 +171,16 @@ export default function ChatPanel({
                   createdAt: m.createdAt,
                   replyToAuthor: m.replyToAuthor,
                   replyToPreview: m.replyToPreview,
+                  editedAt: m.editedAt,
+                  deleted: m.deleted,
                 }))}
                 currentUserId={user.id}
                 showAuthors={false}
                 myHandle={user.username}
                 reactions={reactionsByMessage}
                 onToggleReaction={(id, emoji) => toggleReaction(id, emoji, user)}
+                onEdit={(id, content) => editDirect(activeThread.id, id, content)}
+                onDelete={(id) => deleteDirect(activeThread.id, id)}
                 onReply={(m) => setDmReply({ id: m.id, author: m.authorEmail, preview: previewOf(m) })}
               />
             </div>
@@ -257,11 +265,15 @@ export default function ChatPanel({
                 createdAt: m.createdAt,
                 replyToAuthor: m.replyToAuthor,
                 replyToPreview: m.replyToPreview,
+                editedAt: m.editedAt,
+                deleted: m.deleted,
               }))}
               currentUserId={user.id}
               myHandle={user.username}
               reactions={reactionsByMessage}
               onToggleReaction={(id, emoji) => toggleReaction(id, emoji, user)}
+              onEdit={(id, content) => editWorld(id, content)}
+              onDelete={(id) => deleteWorld(id)}
               onReply={(m) => setWorldReply({ id: m.id, author: m.authorEmail, preview: previewOf(m) })}
             />
           </div>

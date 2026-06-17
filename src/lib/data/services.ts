@@ -564,6 +564,38 @@ export async function sendDirectMessage(input: Omit<DirectMessage, "id" | "creat
   return latency(msg);
 }
 
+// ── Message edit / soft-delete (own messages) ─────────────────
+export async function editGroupMessage(id: string, content: string): Promise<void> {
+  const m = messages.find((x) => x.id === id);
+  if (m) { m.content = content; m.editedAt = nowIso(); }
+  await latency(null);
+}
+export async function deleteGroupMessage(id: string): Promise<void> {
+  const m = messages.find((x) => x.id === id);
+  if (m) { m.deleted = true; m.content = ""; m.contentType = "text"; m.filename = undefined; }
+  await latency(null);
+}
+export async function editWorldMessage(id: string, content: string): Promise<void> {
+  const m = worldMessages.find((x) => x.id === id);
+  if (m) { m.content = content; m.editedAt = nowIso(); }
+  await latency(null);
+}
+export async function deleteWorldMessage(id: string): Promise<void> {
+  const m = worldMessages.find((x) => x.id === id);
+  if (m) { m.deleted = true; m.content = ""; m.contentType = "text"; m.filename = undefined; }
+  await latency(null);
+}
+export async function editDirectMessage(id: string, content: string): Promise<void> {
+  const m = directMessages.find((x) => x.id === id);
+  if (m) { m.content = content; m.editedAt = nowIso(); }
+  await latency(null);
+}
+export async function deleteDirectMessage(id: string): Promise<void> {
+  const m = directMessages.find((x) => x.id === id);
+  if (m) { m.deleted = true; m.content = ""; m.contentType = "text"; m.filename = undefined; }
+  await latency(null);
+}
+
 // ── Friend requests + contacts ────────────────────────────────
 function contactIds(userId: string): string[] {
   return friendRequests

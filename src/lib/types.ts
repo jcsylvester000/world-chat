@@ -118,6 +118,8 @@ export interface Message {
   replyToId?: string;
   replyToAuthor?: string; // email of the quoted author
   replyToPreview?: string; // short snippet of the quoted message
+  editedAt?: string; // set when the author edits the message
+  deleted?: boolean; // soft-delete flag
   id: string;
   groupId: string;
   userId: string;
@@ -132,6 +134,8 @@ export interface WorldMessage {
   replyToId?: string;
   replyToAuthor?: string; // email of the quoted author
   replyToPreview?: string; // short snippet of the quoted message
+  editedAt?: string; // set when the author edits the message
+  deleted?: boolean; // soft-delete flag
   id: string;
   userId: string;
   userEmail: string;
@@ -152,6 +156,8 @@ export interface DirectMessage {
   replyToId?: string;
   replyToAuthor?: string; // email of the quoted author
   replyToPreview?: string; // short snippet of the quoted message
+  editedAt?: string; // set when the author edits the message
+  deleted?: boolean; // soft-delete flag
   id: string;
   threadId: string;
   senderId: string;

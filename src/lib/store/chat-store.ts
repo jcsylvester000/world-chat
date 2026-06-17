@@ -3,6 +3,12 @@ import {
   addGroupMember,
   createGroup,
   deleteGroup,
+  deleteDirectMessage,
+  deleteGroupMessage,
+  deleteWorldMessage,
+  editDirectMessage,
+  editGroupMessage,
+  editWorldMessage,
   getOrCreateThread,
   listGroupsForUser,
   listDirectMessages,
@@ -75,6 +81,13 @@ interface ChatState {
   ) => Promise<void>;
 
   toggleReaction: (messageId: string, emoji: string, user: Profile) => void;
+
+  editGroupMessage: (groupId: string, id: string, content: string) => Promise<void>;
+  deleteGroupMessage: (groupId: string, id: string) => Promise<void>;
+  editWorld: (id: string, content: string) => Promise<void>;
+  deleteWorld: (id: string) => Promise<void>;
+  editDirect: (threadId: string, id: string, content: string) => Promise<void>;
+  deleteDirect: (threadId: string, id: string) => Promise<void>;
 }
 
 export const useChatStore = create<ChatState>((set, get) => ({
@@ -178,6 +191,31 @@ export const useChatStore = create<ChatState>((set, get) => ({
       replyToAuthor: opts?.replyTo?.author,
       replyToPreview: opts?.replyTo?.preview,
     });
+    await get().fetchDirectMessages(threadId);
+  },
+
+  async editGroupMessage(groupId, id, content) {
+    await editGroupMessage(id, content);
+    await get().fetchGroupMessages(groupId);
+  },
+  async deleteGroupMessage(groupId, id) {
+    await deleteGroupMessage(id);
+    await get().fetchGroupMessages(groupId);
+  },
+  async editWorld(id, content) {
+    await editWorldMessage(id, content);
+    await get().fetchWorld();
+  },
+  async deleteWorld(id) {
+    await deleteWorldMessage(id);
+    await get().fetchWorld();
+  },
+  async editDirect(threadId, id, content) {
+    await editDirectMessage(id, content);
+    await get().fetchDirectMessages(threadId);
+  },
+  async deleteDirect(threadId, id) {
+    await deleteDirectMessage(id);
     await get().fetchDirectMessages(threadId);
   },
 

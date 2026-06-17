@@ -37,6 +37,8 @@ export default function GroupDetailModal({
   const sendGroupMessage = useChatStore((s) => s.sendGroupMessage);
   const reactionsByMessage = useChatStore((s) => s.reactionsByMessage);
   const toggleReaction = useChatStore((s) => s.toggleReaction);
+  const editGroupMessage = useChatStore((s) => s.editGroupMessage);
+  const deleteGroupMessage = useChatStore((s) => s.deleteGroupMessage);
 
   const members = useMemo(
     () => membersByGroup[group.id] ?? [],
@@ -128,11 +130,15 @@ export default function GroupDetailModal({
                   createdAt: m.createdAt,
                   replyToAuthor: m.replyToAuthor,
                   replyToPreview: m.replyToPreview,
+                  editedAt: m.editedAt,
+                  deleted: m.deleted,
                 }))}
                 currentUserId={user.id}
                 myHandle={user.username}
                 reactions={reactionsByMessage}
                 onToggleReaction={(id, emoji) => toggleReaction(id, emoji, user)}
+                onEdit={(id, content) => editGroupMessage(group.id, id, content)}
+                onDelete={(id) => deleteGroupMessage(group.id, id)}
                 onReply={(m) => setReply({ id: m.id, author: m.authorEmail, preview: previewOf(m) })}
               />
             )}

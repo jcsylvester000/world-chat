@@ -15,6 +15,8 @@ export interface ChatMsg {
   createdAt: string;
   replyToAuthor?: string;
   replyToPreview?: string;
+  editedAt?: string;
+  deleted?: boolean;
 }
 
 const GROUP_WINDOW_MS = 5 * 60 * 1000; // group same-author messages within 5 min
@@ -38,6 +40,8 @@ export default function MessageList({
   myHandle,
   reactions,
   onToggleReaction,
+  onEdit,
+  onDelete,
 }: {
   messages: ChatMsg[];
   currentUserId: string;
@@ -46,6 +50,8 @@ export default function MessageList({
   myHandle?: string;
   reactions?: Record<string, Reaction[]>;
   onToggleReaction?: (messageId: string, emoji: string) => void;
+  onEdit?: (messageId: string, content: string) => void;
+  onDelete?: (messageId: string) => void;
 }) {
   return (
     <>
@@ -87,6 +93,10 @@ export default function MessageList({
                 currentUserId={currentUserId}
                 reactions={reactions?.[m.id]}
                 onReact={onToggleReaction ? (emoji) => onToggleReaction(m.id, emoji) : undefined}
+                editedAt={m.editedAt}
+                deleted={m.deleted}
+                onEdit={onEdit ? (content) => onEdit(m.id, content) : undefined}
+                onDelete={onDelete ? () => onDelete(m.id) : undefined}
               />
             </div>
           </div>
