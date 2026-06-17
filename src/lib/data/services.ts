@@ -50,6 +50,7 @@ import {
   type Payment,
   type Plan,
   type Profile,
+  type Reaction,
   type Property,
   type PropertyAttachment,
   type PropertyRequest,
@@ -467,6 +468,7 @@ export async function listChatGroups(): Promise<ChatGroup[]> {
 }
 // Only the groups the user belongs to (or created) — groups are private.
 export async function listGroupsForUser(userId: string): Promise<ChatGroup[]> {
+  if (USE_PRISMA) return apiGet<ChatGroup[]>(`/api/chat/groups?userId=${encodeURIComponent(userId)}`);
   const u = profiles.find((p) => p.id === userId);
   return latency(
     chatGroups
@@ -475,6 +477,7 @@ export async function listGroupsForUser(userId: string): Promise<ChatGroup[]> {
   );
 }
 export async function listGroupMembers(groupId: string): Promise<Profile[]> {
+  if (USE_PRISMA) return apiGet<Profile[]>(`/api/chat/groups/${encodeURIComponent(groupId)}/members`);
   const ids = groupMembers[groupId] ?? [];
   return latency(profiles.filter((p) => ids.includes(p.id)));
 }
@@ -483,6 +486,7 @@ export async function createGroup(
   createdByEmail: string,
   memberEmails: string[]
 ): Promise<ChatGroup> {
+  if (USE_PRISMA) return apiSend<ChatGroup>("/api/chat/groups", "POST", { name, createdByEmail, memberEmails });
   const group: ChatGroup = { id: uid("g"), name, createdByEmail };
   chatGroups.push(group);
   const emails = Array.from(new Set([createdByEmail, ...memberEmails]));
@@ -490,11 +494,13 @@ export async function createGroup(
   return latency(group);
 }
 export async function renameGroup(groupId: string, name: string): Promise<void> {
+  if (USE_PRISMA) { await apiSend(`/api/chat/groups/${encodeURIComponent(groupId)}`, "PATCH", { name }); return; }
   const g = chatGroups.find((x) => x.id === groupId);
   if (g) g.name = name;
   await latency(null);
 }
 export async function deleteGroup(groupId: string): Promise<void> {
+  if (USE_PRISMA) { await apiSend(`/api/chat/groups/${encodeURIComponent(groupId)}`, "DELETE"); return; }
   const i = chatGroups.findIndex((g) => g.id === groupId);
   if (i >= 0) chatGroups.splice(i, 1);
   delete groupMembers[groupId];
@@ -503,42 +509,54 @@ export async function deleteGroup(groupId: string): Promise<void> {
   await latency(null);
 }
 export async function addGroupMember(groupId: string, userId: string): Promise<void> {
+  if (USE_PRISMA) { await apiSend(`/api/chat/groups/${encodeURIComponent(groupId)}/members`, "POST", { userId }); return; }
   const list = groupMembers[groupId] ?? (groupMembers[groupId] = []);
   if (!list.includes(userId)) list.push(userId);
   await latency(null);
 }
 export async function removeGroupMember(groupId: string, userId: string): Promise<void> {
+  if (USE_PRISMA) { await apiSend(`/api/chat/groups/${encodeURIComponent(groupId)}/members?userId=${encodeURIComponent(userId)}`, "DELETE"); return; }
   groupMembers[groupId] = (groupMembers[groupId] ?? []).filter((id) => id !== userId);
   await latency(null);
 }
-export async function listGroupMessages(groupId: string): Promise<Message[]> {
+export async function listGroupMessages(groupId: string, viewerPlan?: "basic" | "premium"): Promise<Message[]> {
+  if (USE_PRISMA) return apiGet<Message[]>(`/api/chat/groups/${encodeURIComponent(groupId)}/messages${viewerPlan ? `?plan=${viewerPlan}` : ""}`);
   pruneOld(messages);
   return latency(
     messages.filter((m) => m.groupId === groupId && isFresh(m.createdAt)).sort((a, b) => a.createdAt.localeCompare(b.createdAt))
   );
 }
 export async function sendGroupMessage(input: Omit<Message, "id" | "createdAt">): Promise<Message> {
+  if (USE_PRISMA) return apiSend<Message>(`/api/chat/groups/${encodeURIComponent(input.groupId)}/messages`, "POST", input);
   const msg: Message = { ...input, id: uid("m"), createdAt: nowIso() };
   messages.push(msg);
   return latency(msg);
 }
-export async function listWorldMessages(): Promise<WorldMessage[]> {
+export async function listWorldMessages(viewerPlan?: "basic" | "premium"): Promise<WorldMessage[]> {
+  if (USE_PRISMA) return apiGet<WorldMessage[]>(`/api/chat/world${viewerPlan ? `?plan=${viewerPlan}` : ""}`);
   pruneOld(worldMessages);
   return latency(
     worldMessages.filter((m) => isFresh(m.createdAt)).sort((a, b) => a.createdAt.localeCompare(b.createdAt))
   );
 }
 export async function sendWorldMessage(input: Omit<WorldMessage, "id" | "createdAt">): Promise<WorldMessage> {
+  if (USE_PRISMA) return apiSend<WorldMessage>("/api/chat/world", "POST", input);
   const msg: WorldMessage = { ...input, id: uid("w"), createdAt: nowIso() };
   worldMessages.push(msg);
   return latency(msg);
 }
 export async function listThreadsForUser(userId: string): Promise<DirectThread[]> {
+  if (USE_PRISMA) return apiGet<DirectThread[]>(`/api/chat/threads?userId=${encodeURIComponent(userId)}`);
   return latency(
     directThreads.filter((t) => t.participantIds.includes(userId)).sort((a, b) => b.createdAt.localeCompare(a.createdAt))
   );
 }
 export async function getOrCreateThread(a: Profile, b: Profile): Promise<DirectThread> {
+  if (USE_PRISMA) {
+    if (a.plan === "basic" && !(await areContacts(a.id, b.id)))
+      throw new Error("Basic plan can only message your contacts. Upgrade to Premium to message anyone.");
+    return apiSend<DirectThread>("/api/chat/threads", "POST", { a: { id: a.id, email: a.email }, b: { id: b.id, email: b.email } });
+  }
   const existing = directThreads.find(
     (t) => t.participantIds.includes(a.id) && t.participantIds.includes(b.id)
   );
@@ -552,13 +570,15 @@ export async function getOrCreateThread(a: Profile, b: Profile): Promise<DirectT
   directThreads.push(thread);
   return latency(thread);
 }
-export async function listDirectMessages(threadId: string): Promise<DirectMessage[]> {
+export async function listDirectMessages(threadId: string, viewerPlan?: "basic" | "premium"): Promise<DirectMessage[]> {
+  if (USE_PRISMA) return apiGet<DirectMessage[]>(`/api/chat/threads/${encodeURIComponent(threadId)}/messages${viewerPlan ? `?plan=${viewerPlan}` : ""}`);
   pruneOld(directMessages);
   return latency(
     directMessages.filter((m) => m.threadId === threadId && isFresh(m.createdAt)).sort((a, b) => a.createdAt.localeCompare(b.createdAt))
   );
 }
 export async function sendDirectMessage(input: Omit<DirectMessage, "id" | "createdAt">): Promise<DirectMessage> {
+  if (USE_PRISMA) return apiSend<DirectMessage>(`/api/chat/threads/${encodeURIComponent(input.threadId)}/messages`, "POST", input);
   const msg: DirectMessage = { ...input, id: uid("dm"), createdAt: nowIso() };
   directMessages.push(msg);
   return latency(msg);
@@ -566,34 +586,59 @@ export async function sendDirectMessage(input: Omit<DirectMessage, "id" | "creat
 
 // ── Message edit / soft-delete (own messages) ─────────────────
 export async function editGroupMessage(id: string, content: string): Promise<void> {
+  if (USE_PRISMA) { await apiSend(`/api/chat/messages/${encodeURIComponent(id)}`, "PATCH", { scope: "group", content }); return; }
   const m = messages.find((x) => x.id === id);
   if (m) { m.content = content; m.editedAt = nowIso(); }
   await latency(null);
 }
 export async function deleteGroupMessage(id: string): Promise<void> {
+  if (USE_PRISMA) { await apiSend(`/api/chat/messages/${encodeURIComponent(id)}?scope=group`, "DELETE"); return; }
   const m = messages.find((x) => x.id === id);
   if (m) { m.deleted = true; m.content = ""; m.contentType = "text"; m.filename = undefined; }
   await latency(null);
 }
 export async function editWorldMessage(id: string, content: string): Promise<void> {
+  if (USE_PRISMA) { await apiSend(`/api/chat/messages/${encodeURIComponent(id)}`, "PATCH", { scope: "world", content }); return; }
   const m = worldMessages.find((x) => x.id === id);
   if (m) { m.content = content; m.editedAt = nowIso(); }
   await latency(null);
 }
 export async function deleteWorldMessage(id: string): Promise<void> {
+  if (USE_PRISMA) { await apiSend(`/api/chat/messages/${encodeURIComponent(id)}?scope=world`, "DELETE"); return; }
   const m = worldMessages.find((x) => x.id === id);
   if (m) { m.deleted = true; m.content = ""; m.contentType = "text"; m.filename = undefined; }
   await latency(null);
 }
 export async function editDirectMessage(id: string, content: string): Promise<void> {
+  if (USE_PRISMA) { await apiSend(`/api/chat/messages/${encodeURIComponent(id)}`, "PATCH", { scope: "direct", content }); return; }
   const m = directMessages.find((x) => x.id === id);
   if (m) { m.content = content; m.editedAt = nowIso(); }
   await latency(null);
 }
 export async function deleteDirectMessage(id: string): Promise<void> {
+  if (USE_PRISMA) { await apiSend(`/api/chat/messages/${encodeURIComponent(id)}?scope=direct`, "DELETE"); return; }
   const m = directMessages.find((x) => x.id === id);
   if (m) { m.deleted = true; m.content = ""; m.contentType = "text"; m.filename = undefined; }
   await latency(null);
+}
+
+// ── Chat reactions + read-state (Neon when USE_PRISMA, else store-local) ──
+export async function listReactions(messageIds: string[]): Promise<(Reaction & { messageId: string })[]> {
+  if (USE_PRISMA) {
+    if (messageIds.length === 0) return [];
+    return apiGet<(Reaction & { messageId: string })[]>(`/api/chat/reactions?messageIds=${encodeURIComponent(messageIds.join(","))}`);
+  }
+  return [];
+}
+export async function toggleReactionRemote(messageId: string, userId: string, userEmail: string, emoji: string): Promise<void> {
+  if (USE_PRISMA) await apiSend("/api/chat/reactions", "POST", { messageId, userId, userEmail, emoji });
+}
+export async function listReads(userId: string): Promise<{ conversationId: string; lastReadAt: string }[]> {
+  if (USE_PRISMA) return apiGet<{ conversationId: string; lastReadAt: string }[]>(`/api/chat/reads?userId=${encodeURIComponent(userId)}`);
+  return [];
+}
+export async function markReadRemote(userId: string, conversationId: string): Promise<void> {
+  if (USE_PRISMA) await apiSend("/api/chat/reads", "POST", { userId, conversationId });
 }
 
 // ── Friend requests + contacts ────────────────────────────────

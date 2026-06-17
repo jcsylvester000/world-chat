@@ -16,6 +16,7 @@ export default function AddGroupModal({ onClose }: { onClose: () => void }) {
   const [name, setName] = useState("");
   const [allUsers, setAllUsers] = useState<Profile[]>([]);
   const [added, setAdded] = useState<string[]>([]);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     if (user) listAddableUsers(user.id).then(setAllUsers);
@@ -31,8 +32,13 @@ export default function AddGroupModal({ onClose }: { onClose: () => void }) {
 
   const submit = async () => {
     if (!name.trim() || !user) return;
-    await createGroup(name.trim(), user.email, added);
-    onClose();
+    setError(null);
+    try {
+      await createGroup(name.trim(), user.email, added);
+      onClose();
+    } catch (e) {
+      setError((e as Error).message);
+    }
   };
 
   return (
@@ -74,6 +80,10 @@ export default function AddGroupModal({ onClose }: { onClose: () => void }) {
           );
         })}
       </div>
+
+      {error && (
+        <p className="mt-4 rounded-lg bg-rose-50 px-3 py-2 text-sm text-rose-600">{error}</p>
+      )}
 
       <button
         onClick={submit}

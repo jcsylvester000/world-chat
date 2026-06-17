@@ -66,6 +66,11 @@ export const ANNUAL_SAVINGS = PREMIUM_PRICE_MONTHLY * 12 - PREMIUM_PRICE_ANNUAL;
 // Basic (free) plan limit. Premium removes the listing cap.
 export const BASIC_LISTING_CAP = 5;
 
+// Chat subscription limits.
+export const BASIC_GROUP_CAP = 3; // Basic plan: max groups you can create
+export const CHAT_RETENTION_DAYS_BASIC = 7;
+export const CHAT_RETENTION_DAYS_PREMIUM = 30;
+
 export type BillingInterval = "monthly" | "annual";
 
 // Price for a given plan + interval, in PHP. Basic is always free.

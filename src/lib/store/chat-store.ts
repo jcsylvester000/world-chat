@@ -21,7 +21,13 @@ import {
   sendDirectMessage,
   sendGroupMessage,
   sendWorldMessage,
+  listReactions,
+  toggleReactionRemote,
+  listReads,
+  markReadRemote,
 } from "@/lib/data/services";
+import { USE_PRISMA } from "@/lib/api";
+import { useAuthStore } from "@/lib/store/auth-store";
 import type {
   ChatGroup,
   DirectMessage,
@@ -83,6 +89,8 @@ interface ChatState {
 
   toggleReaction: (messageId: string, emoji: string, user: Profile) => void;
   markRead: (convKey: string) => void;
+  fetchReactions: (messageIds: string[]) => Promise<void>;
+  fetchReads: (userId: string) => Promise<void>;
 
   editGroupMessage: (groupId: string, id: string, content: string) => Promise<void>;
   deleteGroupMessage: (groupId: string, id: string) => Promise<void>;
@@ -109,7 +117,10 @@ export const useChatStore = create<ChatState>((set, get) => ({
     set({ groupsUserId: id, groups: await listGroupsForUser(id) });
   },
   async fetchWorld() {
-    set({ worldMessages: await listWorldMessages() });
+    const plan = useAuthStore.getState().user?.plan;
+    const msgs = await listWorldMessages(plan);
+    set({ worldMessages: msgs });
+    await get().fetchReactions(msgs.map((m) => m.id));
   },
   async fetchGroupMembers(groupId) {
     const members = await listGroupMembers(groupId);
@@ -117,8 +128,10 @@ export const useChatStore = create<ChatState>((set, get) => ({
     return members;
   },
   async fetchGroupMessages(groupId) {
-    const msgs = await listGroupMessages(groupId);
+    const plan = useAuthStore.getState().user?.plan;
+    const msgs = await listGroupMessages(groupId, plan);
     set({ messagesByGroup: { ...get().messagesByGroup, [groupId]: msgs } });
+    await get().fetchReactions(msgs.map((m) => m.id));
     return msgs;
   },
   async createGroup(name, createdByEmail, memberEmails) {
@@ -179,8 +192,10 @@ export const useChatStore = create<ChatState>((set, get) => ({
     return thread.id;
   },
   async fetchDirectMessages(threadId) {
-    const msgs = await listDirectMessages(threadId);
+    const plan = useAuthStore.getState().user?.plan;
+    const msgs = await listDirectMessages(threadId, plan);
     set({ messagesByThread: { ...get().messagesByThread, [threadId]: msgs } });
+    await get().fetchReactions(msgs.map((m) => m.id));
   },
   async sendDirect(threadId, author, content, opts) {
     await sendDirectMessage({
@@ -224,6 +239,8 @@ export const useChatStore = create<ChatState>((set, get) => ({
 
   markRead(convKey) {
     set({ lastReadByConv: { ...get().lastReadByConv, [convKey]: new Date().toISOString() } });
+    const uid = useAuthStore.getState().user?.id;
+    if (uid) void markReadRemote(uid, convKey);
   },
 
   toggleReaction(messageId, emoji, user) {
@@ -234,5 +251,23 @@ export const useChatStore = create<ChatState>((set, get) => ({
       ? list.filter((r) => !(r.emoji === emoji && r.userId === user.id))
       : [...list, { emoji, userId: user.id, userEmail: user.email }];
     set({ reactionsByMessage: { ...map, [messageId]: next } });
+    void toggleReactionRemote(messageId, user.id, user.email, emoji);
+  },
+
+  async fetchReactions(messageIds) {
+    if (!USE_PRISMA || messageIds.length === 0) return;
+    const rows = await listReactions(messageIds);
+    const byId: Record<string, Reaction[]> = {};
+    for (const id of messageIds) byId[id] = [];
+    for (const r of rows) (byId[r.messageId] ??= []).push({ emoji: r.emoji, userId: r.userId, userEmail: r.userEmail });
+    set({ reactionsByMessage: { ...get().reactionsByMessage, ...byId } });
+  },
+
+  async fetchReads(userId) {
+    if (!USE_PRISMA) return;
+    const rows = await listReads(userId);
+    const map: Record<string, string> = {};
+    for (const r of rows) map[r.conversationId] = r.lastReadAt;
+    set({ lastReadByConv: map });
   },
 }));

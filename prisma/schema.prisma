@@ -166,6 +166,11 @@ model Message {
   content     String
   contentType MessageContentType @default(text)
   filename    String?
+  replyToId      String?
+  replyToAuthor  String?
+  replyToPreview String?
+  editedAt       DateTime?
+  deleted        Boolean            @default(false)
   createdAt   DateTime           @default(now())
 
   @@index([groupId])
@@ -179,6 +184,11 @@ model WorldMessage {
   content     String
   contentType MessageContentType @default(text)
   filename    String?
+  replyToId      String?
+  replyToAuthor  String?
+  replyToPreview String?
+  editedAt       DateTime?
+  deleted        Boolean            @default(false)
   createdAt   DateTime           @default(now())
 }
 
@@ -205,6 +215,11 @@ model DirectMessage {
   content     String
   contentType MessageContentType @default(text)
   filename    String?
+  replyToId      String?
+  replyToAuthor  String?
+  replyToPreview String?
+  editedAt       DateTime?
+  deleted        Boolean            @default(false)
   createdAt   DateTime           @default(now())
 
   @@index([threadId])
@@ -224,6 +239,26 @@ model ChatTyping {
 
   @@id([conversationId, userId])
   @@index([conversationId])
+}
+
+model MessageReaction {
+  id        String   @id @default(cuid())
+  messageId String
+  userId    String
+  userEmail String
+  emoji     String
+  createdAt DateTime @default(now())
+
+  @@unique([messageId, userId, emoji])
+  @@index([messageId])
+}
+
+model MessageRead {
+  userId         String
+  conversationId String
+  lastReadAt     DateTime @default(now())
+
+  @@id([userId, conversationId])
 }
 
 model Payment {

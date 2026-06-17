@@ -59,6 +59,7 @@ export default function ChatPanel({
   const fetchGroupMessages = useChatStore((s) => s.fetchGroupMessages);
   const lastReadByConv = useChatStore((s) => s.lastReadByConv);
   const markRead = useChatStore((s) => s.markRead);
+  const fetchReads = useChatStore((s) => s.fetchReads);
 
   const [tab, setTab] = useState<Tab>(openDmUserId ? "direct" : defaultTab);
   const [activeThreadId, setActiveThreadId] = useState<string | null>(null);
@@ -75,22 +76,28 @@ export default function ChatPanel({
   const [worldDividerAt, setWorldDividerAt] = useState<string | null>(null);
   const [switcherOpen, setSwitcherOpen] = useState(false);
   const [switcherPeople, setSwitcherPeople] = useState<Profile[]>([]);
+  const [chatError, setChatError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!user) return;
     fetchGroups(user.id);
     fetchWorld();
     fetchThreads(user.id);
-  }, [user, fetchGroups, fetchWorld, fetchThreads]);
+    fetchReads(user.id);
+  }, [user, fetchGroups, fetchWorld, fetchThreads, fetchReads]);
 
   useEffect(() => {
     if (!user || !openDmUserId) return;
     (async () => {
       const other = await findProfileById(openDmUserId);
       if (other && other.id !== user.id) {
-        const tid = await openThread(user, other);
-        setTab("direct");
-        setActiveThreadId(tid);
+        try {
+          const tid = await openThread(user, other);
+          setTab("direct");
+          setActiveThreadId(tid);
+        } catch (e) {
+          setChatError((e as Error).message);
+        }
       }
     })();
   }, [user, openDmUserId, openThread]);
@@ -204,10 +211,14 @@ export default function ChatPanel({
   };
   const startDm = async (other: Profile) => {
     if (!user) return;
-    const tid = await openThread(user, other);
-    setShowNewDm(false);
-    setTab("direct");
-    setActiveThreadId(tid);
+    try {
+      const tid = await openThread(user, other);
+      setShowNewDm(false);
+      setTab("direct");
+      setActiveThreadId(tid);
+    } catch (e) {
+      setChatError((e as Error).message);
+    }
   };
 
   if (!user) return null;
@@ -239,6 +250,13 @@ export default function ChatPanel({
         })}
         <button onClick={() => setSwitcherOpen(true)} title="Quick switch (Ctrl/⌘K)" className="ml-1 shrink-0 rounded-lg px-2 text-sm text-slate-400 hover:bg-slate-50 hover:text-ink">🔍</button>
       </div>
+
+      {chatError && (
+        <div className="flex items-center gap-2 border-b border-line bg-rose-50 px-3 py-2 text-xs text-rose-600">
+          <span className="flex-1">{chatError}</span>
+          <button onClick={() => setChatError(null)} className="shrink-0 rounded px-1 hover:text-rose-800" title="Dismiss">✕</button>
+        </div>
+      )}
 
       {/* DIRECT */}
       {tab === "direct" &&
@@ -281,8 +299,13 @@ export default function ChatPanel({
             <TypingIndicator users={dmTyping.typers} />
             <ChatComposer
               onSend={async (c, o) => {
-                await sendDirect(activeThread.id, user, c, dmReply ? { ...o, replyTo: dmReply } : o);
-                setDmReply(null);
+                try {
+                  await sendDirect(activeThread.id, user, c, dmReply ? { ...o, replyTo: dmReply } : o);
+                  setDmReply(null);
+                } catch (e) {
+                  setChatError((e as Error).message);
+                  throw e;
+                }
               }}
               replyTarget={dmReply}
               onCancelReply={() => setDmReply(null)}
@@ -377,19 +400,32 @@ export default function ChatPanel({
               newMessageAfter={worldDividerAt}
             />
           </div>
-          <TypingIndicator users={worldTyping.typers} />
-          <ChatComposer
-            onSend={async (c, o) => {
-              await sendWorld(user, c, worldReply ? { ...o, replyTo: worldReply } : o);
-              setWorldReply(null);
-            }}
-            placeholder="Message everyone…"
-            replyTarget={worldReply}
-            onCancelReply={() => setWorldReply(null)}
-            mentionSource={mentionSource}
-            onTyping={worldTyping.notifyTyping}
-            onStopTyping={worldTyping.stopTyping}
-          />
+          {user.plan === "premium" ? (
+            <>
+              <TypingIndicator users={worldTyping.typers} />
+              <ChatComposer
+                onSend={async (c, o) => {
+                  try {
+                    await sendWorld(user, c, worldReply ? { ...o, replyTo: worldReply } : o);
+                    setWorldReply(null);
+                  } catch (e) {
+                    setChatError((e as Error).message);
+                    throw e;
+                  }
+                }}
+                placeholder="Message everyone…"
+                replyTarget={worldReply}
+                onCancelReply={() => setWorldReply(null)}
+                mentionSource={mentionSource}
+                onTyping={worldTyping.notifyTyping}
+                onStopTyping={worldTyping.stopTyping}
+              />
+            </>
+          ) : (
+            <p className="border-t border-line px-3 py-3 text-center text-xs text-slate-400">
+              Posting to World chat is a Premium feature — you can read along, upgrade to join in.
+            </p>
+          )}
         </div>
       )}
 

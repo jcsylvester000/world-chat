@@ -364,18 +364,32 @@ rest of the app still runs on the in-memory mock until you migrate each feature
 (see the playbook below). Nothing breaks by default — Postgres only kicks in
 when you flip the data-source flag.
 
-> **Realtime chat (presence + typing) is also live on Neon.** Two standalone
-> tables — `ChatPresence` and `ChatTyping` — back online/offline dots and the
-> "… is typing" indicators, delivered by short-interval **polling** (no
-> websockets, so it runs on Netlify's serverless functions). Flow:
-> `realtime-hooks.ts (poll)` → `src/lib/data/realtime.ts` → `/api/chat/presence`
-> + `/api/chat/typing` → `src/server/repos/presence.ts` → Prisma → Neon.
-> Heartbeat every 30s marks you online (60s window); typing pings are throttled
-> to one per 2s and auto-expire after 6s. The tables are already created on the
-> project's Neon DB; to recreate them elsewhere run `npm run db:push` (they're
-> in `prisma/schema.prisma`). The chat **messages** themselves are still on the
-> mock layer — that's the next migration step, where per-plan subscription
-> limits (retention, message caps) will be applied.
+> **The whole chat slice now runs on Neon.** Groups, group/world/direct
+> messages (with replies, edits, soft-deletes), DM threads, emoji reactions and
+> per-user read-state are all Prisma-backed:
+> `chat-store` → `services.ts` (USE_PRISMA) → `/api/chat/**` →
+> `src/server/repos/chat.ts` → Prisma → Neon. **Realtime presence + typing**
+> use two standalone tables (`ChatPresence`, `ChatTyping`) delivered by
+> short-interval **polling** (no websockets, so it runs on Netlify's serverless
+> functions): heartbeat every 30s (60s online window), typing pings throttled to
+> one per 2s and auto-expiring after 6s.
+>
+> **Per-plan subscription limits (enforced server-side in the repo):**
+> - Message retention — Basic keeps **7 days**, Premium **30 days** (filtered on
+>   read by the viewer's plan).
+> - Group creation — Basic capped at **3 groups** (`BASIC_GROUP_CAP`), Premium
+>   unlimited. Joining groups is unlimited.
+> - DMs — Basic can only message **accepted contacts**; Premium can DM anyone
+>   discoverable. (Enforced in the service layer, since contacts/friends are
+>   still on the mock layer.)
+> - World chat — **Premium-only posting**; Basic can read along.
+>
+> New tables/columns are already applied to the project's Neon DB. To recreate
+> elsewhere, run `npm run db:push` (schema lives in `prisma/schema.prisma`), then
+> seed demo chat with `npm run db:seed:chat`. Reaction (`MessageReaction`) and
+> read-state (`MessageRead`) tables start empty — they fill as users interact.
+> **Note:** because chat rows FK to `Profile`, only Neon-seeded accounts can use
+> Neon-backed chat; brand-new mock signups would need to be seeded first.
 
 ### Architecture
 
