@@ -59,6 +59,8 @@ export default function ChatPanel({
   const fetchReads = useChatStore((s) => s.fetchReads);
   const overview = useChatStore((s) => s.overview);
   const fetchOverview = useChatStore((s) => s.fetchOverview);
+  const setActiveComposer = useChatStore((s) => s.setActiveComposer);
+  const clearActiveComposer = useChatStore((s) => s.clearActiveComposer);
 
   const [tab, setTab] = useState<Tab>(openDmUserId ? "direct" : defaultTab);
   const [activeThreadId, setActiveThreadId] = useState<string | null>(null);
@@ -206,6 +208,24 @@ export default function ChatPanel({
       setChatError((e as Error).message);
     }
   };
+
+// Publish the currently-visible conversation so the map snapshot tool can
+  // drop an image straight into it.
+  useEffect(() => {
+    if (!user) { clearActiveComposer(); return; }
+    if (tab === "direct" && activeThread) {
+      const other = otherOf(activeThread, user.id);
+      setActiveComposer(
+        (url, fn) => sendDirect(activeThread.id, user, url, { contentType: "image", filename: fn }),
+        "Direct · " + displayName(other.email)
+      );
+    } else if (tab === "world") {
+      setActiveComposer((url, fn) => sendWorld(user, url, { contentType: "image", filename: fn }), "World chat");
+    } else {
+      clearActiveComposer();
+    }
+  }, [user, tab, activeThread, activeThreadId, sendDirect, sendWorld, setActiveComposer, clearActiveComposer]);
+  useEffect(() => () => clearActiveComposer(), [clearActiveComposer]);
 
   if (!user) return null;
 

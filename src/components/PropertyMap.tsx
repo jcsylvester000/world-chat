@@ -6,6 +6,7 @@ import L from "leaflet";
 import { DEFAULT_MAP_CENTER, DEFAULT_MAP_ZOOM } from "@/lib/constants";
 import { formatPeso } from "@/lib/utils";
 import type { Property } from "@/lib/types";
+import MapSnapshotControl from "@/components/MapSnapshotControl";
 
 // Fix Leaflet's default marker icons, which break under bundlers
 // because the image paths are resolved relative to the CSS.
@@ -79,13 +80,16 @@ export default function PropertyMap({
   focusId?: string | null;
   onMarkerClick?: (id: string) => void;
 }) {
+  const mapRef = useRef<L.Map | null>(null);
   return (
-    <MapContainer
-      center={DEFAULT_MAP_CENTER}
-      zoom={DEFAULT_MAP_ZOOM}
-      scrollWheelZoom
-      className="h-full w-full"
-    >
+    <div className="relative h-full w-full">
+      <MapContainer
+        ref={mapRef}
+        center={DEFAULT_MAP_CENTER}
+        zoom={DEFAULT_MAP_ZOOM}
+        scrollWheelZoom
+        className="h-full w-full"
+      >
       <TileLayer
         attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
         url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
@@ -121,8 +125,13 @@ export default function PropertyMap({
           </Popup>
         </Marker>
       ))}
-      <FocusController properties={properties} focusId={focusId} />
-      <BoundsController properties={properties} focusId={focusId} />
-    </MapContainer>
+        <FocusController properties={properties} focusId={focusId} />
+        <BoundsController properties={properties} focusId={focusId} />
+      </MapContainer>
+      <MapSnapshotControl
+        getMap={() => mapRef.current}
+        markers={properties.map((p) => ({ lat: p.latitude, lng: p.longitude }))}
+      />
+    </div>
   );
 }

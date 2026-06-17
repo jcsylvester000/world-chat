@@ -58,6 +58,10 @@ interface ChatState {
   reactionsByMessage: Record<string, Reaction[]>;
   lastReadByConv: Record<string, string>; // conversation key → ISO of last read
   overview: ChatOverview | null; // batched unread + last-message per conversation
+  // The currently-visible chat composer, so other panels (e.g. the map
+  // snapshot tool) can drop an image into the active conversation.
+  activeSend: ((dataUrl: string, filename: string) => Promise<void>) | null;
+  activeLabel: string | null;
 
   fetchGroups: (userId?: string) => Promise<void>;
   fetchWorld: () => Promise<void>;
@@ -93,6 +97,8 @@ interface ChatState {
   toggleReaction: (messageId: string, emoji: string, user: Profile) => void;
   markRead: (convKey: string) => void;
   fetchOverview: (userId: string) => Promise<void>;
+  setActiveComposer: (send: (dataUrl: string, filename: string) => Promise<void>, label: string) => void;
+  clearActiveComposer: () => void;
   fetchReactions: (messageIds: string[]) => Promise<void>;
   fetchReads: (userId: string) => Promise<void>;
 
@@ -115,6 +121,8 @@ export const useChatStore = create<ChatState>((set, get) => ({
   reactionsByMessage: {},
   lastReadByConv: {},
   overview: null,
+  activeSend: null,
+  activeLabel: null,
 
   async fetchGroups(userId) {
     const id = userId ?? get().groupsUserId;
@@ -261,6 +269,13 @@ export const useChatStore = create<ChatState>((set, get) => ({
 
   async fetchOverview(userId) {
     set({ overview: await chatOverview(userId) });
+  },
+
+  setActiveComposer(send, label) {
+    set({ activeSend: send, activeLabel: label });
+  },
+  clearActiveComposer() {
+    set({ activeSend: null, activeLabel: null });
   },
 
   toggleReaction(messageId, emoji, user) {
