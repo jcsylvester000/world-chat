@@ -14,6 +14,9 @@ export default function ChatBubble({
   mine,
   showAuthor = true,
   continuation = false,
+  replyToAuthor,
+  replyToPreview,
+  onReply,
 }: {
   email: string;
   content: string;
@@ -23,15 +26,18 @@ export default function ChatBubble({
   mine: boolean;
   showAuthor?: boolean;
   continuation?: boolean;
+  replyToAuthor?: string;
+  replyToPreview?: string;
+  onReply?: () => void;
 }) {
   const hasHeader = showAuthor && !mine && !continuation;
   return (
-    <div className={cn("flex gap-2", mine && "flex-row-reverse")}>
+    <div className={cn("group flex items-center gap-2", mine && "flex-row-reverse")}>
       {!mine &&
         (continuation ? (
           <div className="w-8 shrink-0" />
         ) : (
-          <Avatar email={email} size={32} className={cn(hasHeader ? "mt-4" : "mt-0")} />
+          <Avatar email={email} size={32} className={cn("self-end", hasHeader ? "mb-4" : "")} />
         ))}
       <div className={cn("max-w-[75%]", mine && "items-end text-right")}>
         {hasHeader && (
@@ -45,6 +51,19 @@ export default function ChatBubble({
               : "rounded-bl-sm bg-white text-ink shadow-sm ring-1 ring-line"
           )}
         >
+          {replyToPreview && (
+            <div
+              className={cn(
+                "mb-1 rounded-md border-l-2 px-2 py-1 text-xs",
+                mine ? "border-white/60 bg-white/15" : "border-primary bg-primary-50/60 text-slate-600"
+              )}
+            >
+              <span className={cn("font-medium", mine ? "text-white" : "text-primary")}>
+                {replyToAuthor ? displayName(replyToAuthor) : "Reply"}
+              </span>
+              <span className="ml-1 opacity-80">{replyToPreview}</span>
+            </div>
+          )}
           {contentType === "image" ? (
             // eslint-disable-next-line @next/next/no-img-element
             <img src={content} alt={filename ?? "photo"} loading="lazy" decoding="async" className="max-h-56 rounded-lg" />
@@ -56,6 +75,16 @@ export default function ChatBubble({
         </div>
         {!continuation && <p className="mt-0.5 text-[10px] text-slate-400">{formatTime(createdAt)}</p>}
       </div>
+      {onReply && (
+        <button
+          onClick={onReply}
+          className="shrink-0 rounded-full px-1.5 py-0.5 text-sm text-slate-400 opacity-0 transition hover:bg-slate-100 hover:text-ink group-hover:opacity-100"
+          title="Reply"
+          type="button"
+        >
+          ↩
+        </button>
+      )}
     </div>
   );
 }

@@ -3,13 +3,20 @@
 import { useEffect, useMemo, useState } from "react";
 import Modal from "@/components/Modal";
 import Avatar from "@/components/ui/Avatar";
-import MessageList from "@/components/MessageList";
-import ChatComposer from "@/components/ChatComposer";
+import MessageList, { type ChatMsg } from "@/components/MessageList";
+import ChatComposer, { type ReplyTarget } from "@/components/ChatComposer";
 import { useAuthStore } from "@/lib/store/auth-store";
 import { useChatStore } from "@/lib/store/chat-store";
 import { listAddableUsers } from "@/lib/data/services";
 import { displayName } from "@/lib/utils";
 import type { ChatGroup, Profile } from "@/lib/types";
+
+function previewOf(m: ChatMsg): string {
+  if (m.contentType === "image") return "📷 Photo";
+  if (m.contentType === "attachment") return `📎 ${m.filename ?? "attachment"}`;
+  const t = m.content.replace(/\s+/g, " ").trim();
+  return t.length > 80 ? t.slice(0, 80) + "…" : t;
+}
 
 export default function GroupDetailModal({
   group,
@@ -39,6 +46,7 @@ export default function GroupDetailModal({
   const [newMember, setNewMember] = useState("");
   const [tab, setTab] = useState<"chat" | "members">("chat");
   const [groupName, setGroupName] = useState(group.name);
+  const [reply, setReply] = useState<ReplyTarget | null>(null);
 
   useEffect(() => {
     if (user) listAddableUsers(user.id).then(setAllUsers);
@@ -110,16 +118,22 @@ export default function GroupDetailModal({
                   contentType: m.contentType,
                   filename: m.filename,
                   createdAt: m.createdAt,
+                  replyToAuthor: m.replyToAuthor,
+                  replyToPreview: m.replyToPreview,
                 }))}
                 currentUserId={user.id}
+                onReply={(m) => setReply({ id: m.id, author: m.authorEmail, preview: previewOf(m) })}
               />
             )}
           </div>
           {user && (
             <ChatComposer
-              onSend={(content, opts) =>
-                sendGroupMessage(group.id, user, content, opts)
-              }
+              onSend={async (content, opts) => {
+                await sendGroupMessage(group.id, user, content, reply ? { ...opts, replyTo: reply } : opts);
+                setReply(null);
+              }}
+              replyTarget={reply}
+              onCancelReply={() => setReply(null)}
             />
           )}
         </div>

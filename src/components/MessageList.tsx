@@ -13,6 +13,8 @@ export interface ChatMsg {
   contentType: MessageContentType;
   filename?: string;
   createdAt: string;
+  replyToAuthor?: string;
+  replyToPreview?: string;
 }
 
 const GROUP_WINDOW_MS = 5 * 60 * 1000; // group same-author messages within 5 min
@@ -32,10 +34,12 @@ export default function MessageList({
   messages,
   currentUserId,
   showAuthors = true,
+  onReply,
 }: {
   messages: ChatMsg[];
   currentUserId: string;
   showAuthors?: boolean;
+  onReply?: (m: ChatMsg) => void;
 }) {
   return (
     <>
@@ -47,6 +51,7 @@ export default function MessageList({
           !newDay &&
           !!prev &&
           prev.authorId === m.authorId &&
+          !m.replyToPreview &&
           new Date(m.createdAt).getTime() - new Date(prev.createdAt).getTime() < GROUP_WINDOW_MS;
         return (
           <div key={m.id}>
@@ -69,6 +74,9 @@ export default function MessageList({
                 mine={m.authorId === currentUserId}
                 showAuthor={showAuthors}
                 continuation={continuation}
+                replyToAuthor={m.replyToAuthor}
+                replyToPreview={m.replyToPreview}
+                onReply={onReply ? () => onReply(m) : undefined}
               />
             </div>
           </div>

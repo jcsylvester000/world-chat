@@ -29,6 +29,7 @@ import type {
 interface SendOpts {
   contentType?: MessageContentType;
   filename?: string;
+  replyTo?: { id: string; author: string; preview: string };
 }
 
 interface ChatState {
@@ -127,6 +128,9 @@ export const useChatStore = create<ChatState>((set, get) => ({
       content,
       contentType: opts?.contentType ?? "text",
       filename: opts?.filename,
+      replyToId: opts?.replyTo?.id,
+      replyToAuthor: opts?.replyTo?.author,
+      replyToPreview: opts?.replyTo?.preview,
     });
     await get().fetchGroupMessages(groupId);
   },
@@ -137,6 +141,9 @@ export const useChatStore = create<ChatState>((set, get) => ({
       content,
       contentType: opts?.contentType ?? "text",
       filename: opts?.filename,
+      replyToId: opts?.replyTo?.id,
+      replyToAuthor: opts?.replyTo?.author,
+      replyToPreview: opts?.replyTo?.preview,
     });
     await get().fetchWorld();
   },
@@ -162,6 +169,9 @@ export const useChatStore = create<ChatState>((set, get) => ({
       content,
       contentType: opts?.contentType ?? "text",
       filename: opts?.filename,
+      replyToId: opts?.replyTo?.id,
+      replyToAuthor: opts?.replyTo?.author,
+      replyToPreview: opts?.replyTo?.preview,
     });
     await get().fetchDirectMessages(threadId);
   },

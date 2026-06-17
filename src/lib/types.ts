@@ -108,6 +108,9 @@ export interface ChatGroup {
 export type MessageContentType = "text" | "image" | "attachment";
 
 export interface Message {
+  replyToId?: string;
+  replyToAuthor?: string; // email of the quoted author
+  replyToPreview?: string; // short snippet of the quoted message
   id: string;
   groupId: string;
   userId: string;
@@ -119,6 +122,9 @@ export interface Message {
 }
 
 export interface WorldMessage {
+  replyToId?: string;
+  replyToAuthor?: string; // email of the quoted author
+  replyToPreview?: string; // short snippet of the quoted message
   id: string;
   userId: string;
   userEmail: string;
@@ -136,6 +142,9 @@ export interface DirectThread {
 }
 
 export interface DirectMessage {
+  replyToId?: string;
+  replyToAuthor?: string; // email of the quoted author
+  replyToPreview?: string; // short snippet of the quoted message
   id: string;
   threadId: string;
   senderId: string;

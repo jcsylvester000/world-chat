@@ -5,8 +5,8 @@ import { useAuthStore } from "@/lib/store/auth-store";
 import { useChatStore } from "@/lib/store/chat-store";
 import { findProfileById, listContacts, searchDiscoverableUsers } from "@/lib/data/services";
 import Avatar from "@/components/ui/Avatar";
-import MessageList from "@/components/MessageList";
-import ChatComposer from "@/components/ChatComposer";
+import MessageList, { type ChatMsg } from "@/components/MessageList";
+import ChatComposer, { type ReplyTarget } from "@/components/ChatComposer";
 import AddGroupModal from "@/components/AddGroupModal";
 import GroupDetailModal from "@/components/GroupDetailModal";
 import Modal from "@/components/Modal";
@@ -14,6 +14,13 @@ import { cn, displayName } from "@/lib/utils";
 import type { ChatGroup, DirectThread, Profile } from "@/lib/types";
 
 type Tab = "direct" | "groups" | "world";
+
+function previewOf(m: ChatMsg): string {
+  if (m.contentType === "image") return "📷 Photo";
+  if (m.contentType === "attachment") return `📎 ${m.filename ?? "attachment"}`;
+  const t = m.content.replace(/\s+/g, " ").trim();
+  return t.length > 80 ? t.slice(0, 80) + "…" : t;
+}
 
 function otherOf(thread: DirectThread, userId: string) {
   const idx = thread.participantIds[0] === userId ? 1 : 0;
@@ -49,6 +56,8 @@ export default function ChatPanel({
   const [dmQuery, setDmQuery] = useState("");
   const worldRef = useRef<HTMLDivElement>(null);
   const dmRef = useRef<HTMLDivElement>(null);
+  const [dmReply, setDmReply] = useState<ReplyTarget | null>(null);
+  const [worldReply, setWorldReply] = useState<ReplyTarget | null>(null);
 
   useEffect(() => {
     if (!user) return;
@@ -124,7 +133,7 @@ export default function ChatPanel({
     <div className="flex h-full flex-col overflow-hidden rounded-2xl border border-line bg-white shadow-sm">
       <div className="flex border-b border-line p-1">
         {(["direct", "groups", "world"] as const).map((t) => (
-          <button key={t} onClick={() => { setTab(t); if (t !== "direct") setActiveThreadId(null); }} className={cn("flex-1 rounded-lg py-2 text-sm font-medium transition", tab === t ? "bg-primary-50 text-primary" : "text-slate-500 hover:bg-slate-50")}>
+          <button key={t} onClick={() => { setTab(t); if (t !== "direct") setActiveThreadId(null); setDmReply(null); setWorldReply(null); }} className={cn("flex-1 rounded-lg py-2 text-sm font-medium transition", tab === t ? "bg-primary-50 text-primary" : "text-slate-500 hover:bg-slate-50")}>
             {t === "direct" ? "Direct" : t === "groups" ? "Groups" : "World"}
           </button>
         ))}
@@ -135,7 +144,7 @@ export default function ChatPanel({
         (activeThread && activeOther ? (
           <div className="flex min-h-0 flex-1 flex-col">
             <div className="flex items-center gap-2 border-b border-line px-3 py-2">
-              <button onClick={() => setActiveThreadId(null)} className="text-slate-500">←</button>
+              <button onClick={() => { setActiveThreadId(null); setDmReply(null); }} className="text-slate-500">←</button>
               <Avatar email={activeOther.email} size={30} />
               <span className="text-sm font-medium">{displayName(activeOther.email)}</span>
             </div>
@@ -149,12 +158,22 @@ export default function ChatPanel({
                   contentType: m.contentType,
                   filename: m.filename,
                   createdAt: m.createdAt,
+                  replyToAuthor: m.replyToAuthor,
+                  replyToPreview: m.replyToPreview,
                 }))}
                 currentUserId={user.id}
                 showAuthors={false}
+                onReply={(m) => setDmReply({ id: m.id, author: m.authorEmail, preview: previewOf(m) })}
               />
             </div>
-            <ChatComposer onSend={(c, o) => sendDirect(activeThread.id, user, c, o)} />
+            <ChatComposer
+              onSend={async (c, o) => {
+                await sendDirect(activeThread.id, user, c, dmReply ? { ...o, replyTo: dmReply } : o);
+                setDmReply(null);
+              }}
+              replyTarget={dmReply}
+              onCancelReply={() => setDmReply(null)}
+            />
           </div>
         ) : (
           <div className="flex min-h-0 flex-1 flex-col">
@@ -225,11 +244,22 @@ export default function ChatPanel({
                 contentType: m.contentType,
                 filename: m.filename,
                 createdAt: m.createdAt,
+                replyToAuthor: m.replyToAuthor,
+                replyToPreview: m.replyToPreview,
               }))}
               currentUserId={user.id}
+              onReply={(m) => setWorldReply({ id: m.id, author: m.authorEmail, preview: previewOf(m) })}
             />
           </div>
-          <ChatComposer onSend={(c, o) => sendWorld(user, c, o)} placeholder="Message everyone…" />
+          <ChatComposer
+            onSend={async (c, o) => {
+              await sendWorld(user, c, worldReply ? { ...o, replyTo: worldReply } : o);
+              setWorldReply(null);
+            }}
+            placeholder="Message everyone…"
+            replyTarget={worldReply}
+            onCancelReply={() => setWorldReply(null)}
+          />
         </div>
       )}
 
