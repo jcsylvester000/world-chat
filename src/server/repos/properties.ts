@@ -70,6 +70,9 @@ export function toProperty(row: Row): Property {
     atsVisibility: row.atsVisibility as AtsVisibility,
     requiresLOI: row.requiresLOI,
     views: row.views,
+    videoUrl: row.videoUrl,
+    tourUrl: row.tourUrl,
+    floorPlans: row.floorPlans,
   };
 }
 
@@ -93,6 +96,9 @@ function toDbData(
   if (patch.showAttachments !== undefined) data.showAttachments = patch.showAttachments;
   if (patch.atsVisibility !== undefined) data.atsVisibility = patch.atsVisibility;
   if (patch.requiresLOI !== undefined) data.requiresLOI = patch.requiresLOI;
+  if (patch.videoUrl !== undefined) data.videoUrl = patch.videoUrl;
+  if (patch.tourUrl !== undefined) data.tourUrl = patch.tourUrl;
+  if (patch.floorPlans !== undefined) data.floorPlans = patch.floorPlans;
   if (patch.ats !== undefined) {
     data.atsUrl = patch.ats?.url ?? null;
     data.atsFilename = patch.ats?.filename ?? null;
@@ -192,6 +198,9 @@ export async function createProperty(
       atsFilename: rest.ats?.filename ?? null,
       atsVisibility: rest.atsVisibility,
       requiresLOI: rest.requiresLOI,
+      videoUrl: rest.videoUrl ?? null,
+      tourUrl: rest.tourUrl ?? null,
+      floorPlans: rest.floorPlans ?? [],
       attachments: { create: attachments.map((a) => ({ url: a.url, filename: a.filename })) },
     },
     ...withAttachments,

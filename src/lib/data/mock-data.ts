@@ -136,6 +136,9 @@ export const properties: Property[] = [
   {
     id: "p-1", ownerId: "u-maria", ownerEmail: "maria.santos@primeland.ph",
     views: 340,
+    videoUrl: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4",
+    tourUrl: "https://my.matterport.com/show/?m=SxQL3iGyoDo",
+    floorPlans: ["https://picsum.photos/seed/fp-makati-1/1000/700", "https://picsum.photos/seed/fp-makati-2/1000/700"],
     title: "Premium Makati CBD Office Floor",
     description:
       "Full grade-A office floor in the Makati CBD with sweeping skyline views. Fitted with central HVAC, backup power, and 24/7 building security. Move-in ready with flexible turnover.",
@@ -183,6 +186,8 @@ export const properties: Property[] = [
   {
     id: "p-4", ownerId: "u-rafael", ownerEmail: "rafael@cruzrealty.ph",
     views: 150,
+    tourUrl: "https://my.matterport.com/show/?m=SxQL3iGyoDo",
+    floorPlans: ["https://picsum.photos/seed/fp-cebu-1/1000/700"],
     title: "Cebu IT Park Office Tower Floors",
     description:
       "Two contiguous office floors in a PEZA-accredited tower at Cebu IT Park. Ideal for BPO or shared-service operations, with redundant power and fiber-ready risers.",
@@ -261,6 +266,8 @@ export const properties: Property[] = [
   {
     id: "p-9", ownerId: "u-james", ownerEmail: "james.reyes@reyesindustrial.ph",
     views: 160,
+    videoUrl: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4",
+    floorPlans: ["https://picsum.photos/seed/fp-calamba-1/1000/700"],
     title: "Calamba Logistics Warehouse (10,000 sqm)",
     description:
       "10,000 sqm warehouse with high clearance and dock levelers, 45 minutes from the port. Heavy power capacity and a wide truck apron for trailer staging.",
@@ -323,6 +330,8 @@ export const properties: Property[] = [
   {
     id: "p-13", ownerId: "u-grace", ownerEmail: "grace.tan@tanprop.ph",
     views: 120,
+    tourUrl: "https://my.matterport.com/show/?m=SxQL3iGyoDo",
+    floorPlans: ["https://picsum.photos/seed/fp-kapitolyo-1/1000/700", "https://picsum.photos/seed/fp-kapitolyo-2/1000/700"],
     title: "Kapitolyo Mixed-Use Building",
     description:
       "Four-storey mixed-use building in Kapitolyo, Pasig — ground-floor retail with offices above. Fully tenanted with upside on lease renewals.",

@@ -44,6 +44,9 @@ export default function AddPropertyForm({
   const [customTag, setCustomTag] = useState("");
   const [photos, setPhotos] = useState<string[]>(initial?.photos ?? []);
   const [files, setFiles] = useState<string[]>([]);
+  const [videoUrl, setVideoUrl] = useState(initial?.videoUrl ?? "");
+  const [tourUrl, setTourUrl] = useState(initial?.tourUrl ?? "");
+  const [floorPlans, setFloorPlans] = useState<string[]>(initial?.floorPlans ?? []);
   const [atsFile, setAtsFile] = useState<string | null>(initial?.ats?.filename ?? null);
   const [atsVisibility, setAtsVisibility] = useState<AtsVisibility>(
     initial?.ats && initial?.atsVisibility ? initial.atsVisibility : "document"
@@ -93,6 +96,9 @@ export default function AddPropertyForm({
         ats,
         atsVisibility: finalVis,
         requiresLOI: ats ? requiresLOI : false,
+        videoUrl: videoUrl.trim() || null,
+        tourUrl: tourUrl.trim() || null,
+        floorPlans,
       });
       if (ok) onAdded();
       else setError(usePropertyStore.getState().error ?? "Could not save changes. Please try again.");
@@ -110,6 +116,9 @@ export default function AddPropertyForm({
       ats,
       atsVisibility: finalVis,
       requiresLOI: ats ? requiresLOI : false,
+      videoUrl: videoUrl.trim() || null,
+      tourUrl: tourUrl.trim() || null,
+      floorPlans,
       attachments: files.map((filename) => ({ url: SAMPLE_PDF, filename })),
     });
     if (created) onAdded();
@@ -135,6 +144,22 @@ export default function AddPropertyForm({
       <div>
         <label className="label">Photos</label>
         <PhotoUploader photos={photos} onChange={setPhotos} />
+      </div>
+
+      <div className="grid gap-3 sm:grid-cols-2">
+        <div>
+          <label className="label">Video URL (optional)</label>
+          <input value={videoUrl} onChange={(e) => setVideoUrl(e.target.value)} placeholder="YouTube, Vimeo, or .mp4 link" className="input" />
+        </div>
+        <div>
+          <label className="label">Virtual tour URL (optional)</label>
+          <input value={tourUrl} onChange={(e) => setTourUrl(e.target.value)} placeholder="360° / Matterport link" className="input" />
+        </div>
+      </div>
+
+      <div>
+        <label className="label">Floor plans (optional)</label>
+        <PhotoUploader photos={floorPlans} onChange={setFloorPlans} />
       </div>
 
       <div>

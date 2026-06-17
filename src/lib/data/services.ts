@@ -262,7 +262,7 @@ export async function updateProperty(
       Property,
       | "showPrice" | "showAttachments" | "title" | "price" | "description"
       | "location" | "latitude" | "longitude" | "type" | "tags" | "photos"
-      | "ats" | "atsVisibility" | "requiresLOI"
+      | "ats" | "atsVisibility" | "requiresLOI" | "videoUrl" | "tourUrl" | "floorPlans"
     >
   >
 ): Promise<Property | undefined> {

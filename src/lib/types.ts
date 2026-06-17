@@ -93,6 +93,10 @@ export interface Property {
   atsVisibility: AtsVisibility;
   requiresLOI: boolean; // require a Letter of Intent to view the ATS
   views?: number; // detail-page view count (analytics)
+  // ── Richer media ──
+  videoUrl?: string | null;
+  tourUrl?: string | null; // 360° / virtual tour link
+  floorPlans?: string[]; // floor-plan image URLs
 }
 
 export interface ChatGroup {

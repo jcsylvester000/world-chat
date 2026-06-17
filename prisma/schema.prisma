@@ -113,6 +113,9 @@ model Property {
   atsVisibility   AtsVisibility @default(hidden)
   requiresLOI     Boolean      @default(false)
   views           Int          @default(0)
+  videoUrl        String?
+  tourUrl         String?
+  floorPlans      String[]
   createdAt       DateTime     @default(now())
 
   attachments    PropertyAttachment[]
