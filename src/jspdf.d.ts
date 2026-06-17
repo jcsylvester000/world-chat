@@ -1,5 +1,5 @@
 // Minimal ambient types for jsPDF v4 (the published package ships no .d.ts).
-// Covers only the API used by lib/invoice-pdf.ts.
+// Covers only the API used by lib/invoice-pdf.ts and lib/teaser/teaser-export.ts.
 declare module "jspdf" {
   interface JsPdfOptions {
     unit?: string;
@@ -20,6 +20,8 @@ declare module "jspdf" {
     text(text: string, x: number, y: number, options?: TextOptions): jsPDF;
     line(x1: number, y1: number, x2: number, y2: number): jsPDF;
     rect(x: number, y: number, w: number, h: number, style?: string): jsPDF;
+    addPage(format?: string | number[], orientation?: "portrait" | "landscape"): jsPDF;
+    addImage(data: string, format: string, x: number, y: number, w: number, h: number): jsPDF;
     save(filename: string): void;
   }
   export default jsPDF;
