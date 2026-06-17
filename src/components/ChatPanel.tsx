@@ -5,7 +5,7 @@ import { useAuthStore } from "@/lib/store/auth-store";
 import { useChatStore } from "@/lib/store/chat-store";
 import { findProfileById, listContacts, searchDiscoverableUsers } from "@/lib/data/services";
 import Avatar from "@/components/ui/Avatar";
-import ChatBubble from "@/components/ChatBubble";
+import MessageList from "@/components/MessageList";
 import ChatComposer from "@/components/ChatComposer";
 import AddGroupModal from "@/components/AddGroupModal";
 import GroupDetailModal from "@/components/GroupDetailModal";
@@ -97,8 +97,6 @@ export default function ChatPanel({
       setPeople(await listContacts(user.id));
       return;
     }
-    // Union discoverable users with your existing contacts so a contact who is
-    // invite-only/hidden doesn't vanish from search.
     const [discoverable, contacts] = await Promise.all([
       searchDiscoverableUsers(q, user.id),
       listContacts(user.id),
@@ -141,10 +139,20 @@ export default function ChatPanel({
               <Avatar email={activeOther.email} size={30} />
               <span className="text-sm font-medium">{displayName(activeOther.email)}</span>
             </div>
-            <div ref={dmRef} className="min-h-0 flex-1 space-y-3 overflow-y-auto p-3">
-              {dmMessages.map((m) => (
-                <ChatBubble key={m.id} email={m.senderEmail} content={m.content} contentType={m.contentType} filename={m.filename} createdAt={m.createdAt} mine={m.senderId === user.id} showAuthor={false} />
-              ))}
+            <div ref={dmRef} className="min-h-0 flex-1 overflow-y-auto p-3">
+              <MessageList
+                messages={dmMessages.map((m) => ({
+                  id: m.id,
+                  authorId: m.senderId,
+                  authorEmail: m.senderEmail,
+                  content: m.content,
+                  contentType: m.contentType,
+                  filename: m.filename,
+                  createdAt: m.createdAt,
+                }))}
+                currentUserId={user.id}
+                showAuthors={false}
+              />
             </div>
             <ChatComposer onSend={(c, o) => sendDirect(activeThread.id, user, c, o)} />
           </div>
@@ -204,13 +212,22 @@ export default function ChatPanel({
       {/* WORLD */}
       {tab === "world" && (
         <div className="flex min-h-0 flex-1 flex-col">
-          <div ref={worldRef} className="min-h-0 flex-1 space-y-3 overflow-y-auto p-3">
+          <div ref={worldRef} className="min-h-0 flex-1 overflow-y-auto p-3">
             {worldMessages.length === 0 && (
               <p className="py-8 text-center text-sm text-slate-400">No messages yet — say hello to everyone! 👋</p>
             )}
-            {worldMessages.map((m) => (
-              <ChatBubble key={m.id} email={m.userEmail} content={m.content} contentType={m.contentType} filename={m.filename} createdAt={m.createdAt} mine={m.userId === user.id} />
-            ))}
+            <MessageList
+              messages={worldMessages.map((m) => ({
+                id: m.id,
+                authorId: m.userId,
+                authorEmail: m.userEmail,
+                content: m.content,
+                contentType: m.contentType,
+                filename: m.filename,
+                createdAt: m.createdAt,
+              }))}
+              currentUserId={user.id}
+            />
           </div>
           <ChatComposer onSend={(c, o) => sendWorld(user, c, o)} placeholder="Message everyone…" />
         </div>

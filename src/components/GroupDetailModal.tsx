@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import Modal from "@/components/Modal";
 import Avatar from "@/components/ui/Avatar";
-import ChatBubble from "@/components/ChatBubble";
+import MessageList from "@/components/MessageList";
 import ChatComposer from "@/components/ChatComposer";
 import { useAuthStore } from "@/lib/store/auth-store";
 import { useChatStore } from "@/lib/store/chat-store";
@@ -94,23 +94,26 @@ export default function GroupDetailModal({
 
       {tab === "chat" ? (
         <div className="flex h-[55vh] flex-col">
-          <div className="flex-1 space-y-3 overflow-y-auto p-4">
+          <div className="flex-1 overflow-y-auto p-4">
             {messages.length === 0 && (
               <p className="text-center text-sm text-slate-400">
                 No messages yet. Say hello 👋
               </p>
             )}
-            {messages.map((m) => (
-              <ChatBubble
-                key={m.id}
-                email={m.userEmail}
-                content={m.content}
-                contentType={m.contentType}
-                filename={m.filename}
-                createdAt={m.createdAt}
-                mine={m.userId === user?.id}
+            {user && (
+              <MessageList
+                messages={messages.map((m) => ({
+                  id: m.id,
+                  authorId: m.userId,
+                  authorEmail: m.userEmail,
+                  content: m.content,
+                  contentType: m.contentType,
+                  filename: m.filename,
+                  createdAt: m.createdAt,
+                }))}
+                currentUserId={user.id}
               />
-            ))}
+            )}
           </div>
           {user && (
             <ChatComposer
