@@ -1,6 +1,7 @@
 "use client";
 
 import Avatar from "@/components/ui/Avatar";
+import MessageText from "@/components/MessageText";
 import { cn, displayName, formatTime } from "@/lib/utils";
 import type { MessageContentType } from "@/lib/types";
 
@@ -38,7 +39,7 @@ export default function ChatBubble({
         )}
         <div
           className={cn(
-            "inline-block rounded-2xl px-3 py-2 text-sm",
+            "inline-block rounded-2xl px-3 py-2 text-left text-sm",
             mine
               ? "rounded-br-sm bg-primary text-white"
               : "rounded-bl-sm bg-white text-ink shadow-sm ring-1 ring-line"
@@ -50,7 +51,7 @@ export default function ChatBubble({
           ) : contentType === "attachment" ? (
             <span className="inline-flex items-center gap-1">📎 {filename ?? "attachment"}</span>
           ) : (
-            <span className="whitespace-pre-wrap break-words">{content}</span>
+            <MessageText content={content} mine={mine} />
           )}
         </div>
         {!continuation && <p className="mt-0.5 text-[10px] text-slate-400">{formatTime(createdAt)}</p>}
