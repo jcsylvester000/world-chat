@@ -679,14 +679,17 @@ export const verificationRequests: VerificationRequest[] = [
   { id: "vr-1", userId: "u-sofia", userEmail: "sofia.andrada@gmail.com", userName: "Sofia Andrada",
     company: "Andrada Family Holdings", licenseNo: "DTI-1122334",
     message: "Individual seller; verifying ownership and identity.",
+    documents: [{ filename: "andrada-valid-id.pdf", url: PDF }, { filename: "andrada-land-title.pdf", url: PDF }],
     status: "pending", createdAt: "2026-06-16T03:00:00.000Z" },
   { id: "vr-2", userId: "u-lena", userEmail: "lena.ocampo@gmail.com", userName: "Lena Ocampo",
     company: "Ocampo Family Estate", licenseNo: "DTI-9988776",
     message: "Verifying my identity to list the family's Batangas lot.",
+    documents: [{ filename: "ocampo-valid-id.pdf", url: PDF }],
     status: "pending", createdAt: "2026-06-14T08:00:00.000Z" },
   { id: "vr-3", userId: "u-rafael", userEmail: "rafael@cruzrealty.ph", userName: "Rafael Cruz",
     company: "Cruz Realty & Co.", licenseNo: "PRC-0023456",
-    message: "PRC license attached.", status: "approved",
+    message: "PRC license attached.",
+    documents: [{ filename: "cruz-prc-license.pdf", url: PDF }], status: "approved",
     createdAt: "2025-12-20T02:00:00.000Z", reviewedAt: "2025-12-21T02:00:00.000Z", reviewedBy: "maria.santos@primeland.ph" },
 ];
 

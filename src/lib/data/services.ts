@@ -1538,7 +1538,7 @@ export async function listVerificationRequests(): Promise<VerificationRequest[]>
 
 export async function submitVerification(
   userId: string,
-  input: { company: string; licenseNo: string; message: string }
+  input: { company: string; licenseNo: string; message: string; documents: AiFile[] }
 ): Promise<VerificationRequest> {
   const u = profiles.find((p) => p.id === userId);
   const idx = verificationRequests.findIndex((r) => r.userId === userId && r.status === "pending");
@@ -1551,6 +1551,7 @@ export async function submitVerification(
     company: input.company,
     licenseNo: input.licenseNo,
     message: input.message,
+    documents: input.documents,
     status: "pending",
     createdAt: nowIso(),
   };

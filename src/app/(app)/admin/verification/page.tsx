@@ -59,13 +59,27 @@ export default function AdminVerificationPage() {
                     <p className="font-semibold text-ink">
                       {r.userName} <span className="text-xs font-normal text-slate-400">{r.userEmail}</span>
                     </p>
-                    <p className="mt-0.5 text-sm text-slate-600">{r.company} · {r.licenseNo}</p>
+                    <p className="mt-0.5 text-sm text-slate-600">{r.company}{r.licenseNo ? ` · ${r.licenseNo}` : ""}</p>
                   </div>
                   <span className={cn("shrink-0 rounded-full px-2 py-0.5 text-[11px] font-medium capitalize", TONE[r.status])}>
                     {r.status}
                   </span>
                 </div>
                 {r.message && <p className="mt-2 text-sm text-slate-600">“{r.message}”</p>}
+                {r.documents.length > 0 && (
+                  <div className="mt-2">
+                    <p className="text-xs font-medium text-slate-500">Documents ({r.documents.length})</p>
+                    <ul className="mt-1 flex flex-wrap gap-2">
+                      {r.documents.map((d, i) => (
+                        <li key={i}>
+                          <a href={d.url} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 rounded-lg border border-line bg-slate-50 px-2 py-1 text-xs text-primary hover:bg-slate-100">
+                            📄 {d.filename}
+                          </a>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
                 <p className="mt-1 text-xs text-slate-400">
                   Submitted {formatDate(r.createdAt)}
                   {r.reviewedBy ? ` · reviewed by ${r.reviewedBy}` : ""}

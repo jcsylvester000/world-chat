@@ -480,8 +480,9 @@ export interface VerificationRequest {
   userEmail: string;
   userName: string;
   company: string;
-  licenseNo: string;
+  licenseNo: string; // optional in the form; "" when not provided
   message: string;
+  documents: AiFile[]; // proof documents the broker uploaded (at least one required)
   status: VerificationStatus;
   createdAt: string;
   reviewedAt?: string;
