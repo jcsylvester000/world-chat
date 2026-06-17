@@ -3,7 +3,7 @@
 import { useEffect } from "react";
 import Link from "next/link";
 import { usePropertyStore } from "@/lib/store/property-store";
-import { formatPeso } from "@/lib/utils";
+import { formatPeso, thumb } from "@/lib/utils";
 import type { Property } from "@/lib/types";
 
 // Detects property links (/listings/<id>) and other URLs inside a message and
@@ -12,7 +12,7 @@ const PROP_RE = /\/listings\/([A-Za-z0-9_-]+)/g;
 const URL_RE = /https?:\/\/[^\s)]+/g;
 
 function PropertyEmbed({ property }: { property: Property }) {
-  const cover = property.photos[0];
+  const cover = thumb(property.photos[0], 160);
   return (
     <Link
       href={`/listings/${property.id}`}

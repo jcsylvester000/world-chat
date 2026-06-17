@@ -40,6 +40,15 @@ export const humanizeTag = (tag: string) =>
   tag.replace(/([A-Z])/g, " $1").trim();
 
 // Read a File into a base64 data URL (used for in-memory photo previews).
+// Request a smaller width for remote (Unsplash/picsum) images so small cards
+// don't download full-size photos. Leaves data: URLs and unknown hosts as-is.
+export const thumb = (url: string, w: number): string => {
+  if (!url || url.startsWith("data:")) return url;
+  if (/[?&]w=\d+/.test(url)) return url.replace(/([?&]w=)\d+/, `$1${w}`);
+  if (url.includes("images.unsplash.com")) return url + (url.includes("?") ? "&" : "?") + `w=${w}`;
+  return url;
+};
+
 export const fileToDataUrl = (file: File): Promise<string> =>
   new Promise((resolve, reject) => {
     const reader = new FileReader();

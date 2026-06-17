@@ -190,6 +190,8 @@ model WorldMessage {
   editedAt       DateTime?
   deleted        Boolean            @default(false)
   createdAt   DateTime           @default(now())
+
+  @@index([createdAt])
 }
 
 model DirectThread {

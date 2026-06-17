@@ -107,6 +107,14 @@ export interface ChatGroup {
 
 export type MessageContentType = "text" | "image" | "attachment";
 
+// Lightweight per-conversation summary for the messages list (one request
+// instead of fetching every conversation's full message history).
+export interface ChatOverview {
+  world: number;
+  groups: Record<string, number>;
+  threads: Record<string, { unread: number; last: { content: string; contentType: MessageContentType; createdAt: string; senderId: string } | null }>;
+}
+
 // Emoji reaction on a chat message (keyed by message id in the store).
 export interface Reaction {
   emoji: string;

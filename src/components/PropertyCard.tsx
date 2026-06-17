@@ -7,7 +7,7 @@ import Badge from "@/components/ui/Badge";
 import PropertyTags from "@/components/PropertyTags";
 import FavoriteButton from "@/components/FavoriteButton";
 import VerifiedBadge from "@/components/VerifiedBadge";
-import { displayName, formatDate, formatPeso } from "@/lib/utils";
+import { displayName, formatDate, formatPeso, thumb } from "@/lib/utils";
 import type { Property } from "@/lib/types";
 
 function PropertyCard({
@@ -19,7 +19,7 @@ function PropertyCard({
   onDm?: (ownerId: string) => void;
   currentUserId?: string;
 }) {
-  const cover = property.photos[0];
+  const cover = thumb(property.photos[0], 640);
 
   return (
     <div className="group flex flex-col overflow-hidden rounded-2xl border border-line bg-white shadow-sm transition hover:-translate-y-0.5 hover:shadow-md">

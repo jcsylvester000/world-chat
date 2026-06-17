@@ -40,6 +40,7 @@ import {
   type AppNotification,
   type AuditLog,
   type ChatGroup,
+  type ChatOverview,
   type ChatVisibility,
   type DirectMessage,
   type DirectThread,
@@ -620,6 +621,12 @@ export async function deleteDirectMessage(id: string): Promise<void> {
   const m = directMessages.find((x) => x.id === id);
   if (m) { m.deleted = true; m.content = ""; m.contentType = "text"; m.filename = undefined; }
   await latency(null);
+}
+
+// One-request messages-list summary (unread + last message per conversation).
+export async function chatOverview(userId: string): Promise<ChatOverview> {
+  if (USE_PRISMA) return apiGet<ChatOverview>(`/api/chat/overview?userId=${encodeURIComponent(userId)}`);
+  return { world: 0, groups: {}, threads: {} };
 }
 
 // ── Chat reactions + read-state (Neon when USE_PRISMA, else store-local) ──

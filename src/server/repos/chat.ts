@@ -11,6 +11,7 @@ import {
 import type {
   BillingInterval,
   ChatGroup,
+  ChatOverview,
   ChatVisibility,
   DirectMessage,
   DirectThread,
@@ -321,6 +322,52 @@ export async function deleteDirectMessage(id: string): Promise<void> {
     where: { id },
     data: { deleted: true, content: "", contentType: "text", filename: null },
   });
+}
+
+
+// One batched summary for the messages list: unread counts per conversation +
+// each DM thread's last message. Replaces fetching every conversation's full
+// history client-side (big win when a user has many chats).
+export async function chatOverview(userId: string): Promise<ChatOverview> {
+  const floor = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+  const reads = await prisma.messageRead.findMany({ where: { userId } });
+  const readAt = (key: string) => reads.find((x) => x.conversationId === key)?.lastReadAt ?? new Date(0);
+
+  const world = await prisma.worldMessage.count({ where: { createdAt: { gt: readAt("world") }, userId: { not: userId } } });
+
+  const memberships = await prisma.groupMember.findMany({ where: { userId }, select: { groupId: true } });
+  const groupIds = memberships.map((m) => m.groupId);
+  const groups: Record<string, number> = {};
+  for (const g of groupIds) groups[g] = 0;
+  if (groupIds.length) {
+    const gmsgs = await prisma.message.findMany({
+      where: { groupId: { in: groupIds }, userId: { not: userId }, createdAt: { gte: floor } },
+      select: { groupId: true, createdAt: true },
+    });
+    for (const m of gmsgs) if (m.createdAt > readAt("group:" + m.groupId)) groups[m.groupId] = (groups[m.groupId] ?? 0) + 1;
+  }
+
+  const dts = await prisma.directThread.findMany({
+    where: { OR: [{ userAId: userId }, { userBId: userId }] }, select: { id: true },
+  });
+  const threadIds = dts.map((t) => t.id);
+  const threads: ChatOverview["threads"] = {};
+  for (const id of threadIds) threads[id] = { unread: 0, last: null };
+  if (threadIds.length) {
+    const dms = await prisma.directMessage.findMany({
+      where: { threadId: { in: threadIds }, createdAt: { gte: floor } },
+      select: { threadId: true, senderId: true, content: true, contentType: true, createdAt: true, deleted: true },
+      orderBy: { createdAt: "asc" },
+    });
+    for (const m of dms) {
+      const th = threads[m.threadId];
+      if (!th) continue;
+      th.last = { content: m.deleted ? "" : m.content, contentType: m.contentType as MessageContentType, createdAt: m.createdAt.toISOString(), senderId: m.senderId };
+      if (m.senderId !== userId && !m.deleted && m.createdAt > readAt("dm:" + m.threadId)) th.unread += 1;
+    }
+  }
+
+  return { world, groups, threads };
 }
 
 // ── reactions ─────────────────────────────────────────────────

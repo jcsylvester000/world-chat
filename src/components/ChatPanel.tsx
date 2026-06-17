@@ -55,11 +55,10 @@ export default function ChatPanel({
   const deleteWorld = useChatStore((s) => s.deleteWorld);
   const editDirect = useChatStore((s) => s.editDirect);
   const deleteDirect = useChatStore((s) => s.deleteDirect);
-  const messagesByGroup = useChatStore((s) => s.messagesByGroup);
-  const fetchGroupMessages = useChatStore((s) => s.fetchGroupMessages);
-  const lastReadByConv = useChatStore((s) => s.lastReadByConv);
   const markRead = useChatStore((s) => s.markRead);
   const fetchReads = useChatStore((s) => s.fetchReads);
+  const overview = useChatStore((s) => s.overview);
+  const fetchOverview = useChatStore((s) => s.fetchOverview);
 
   const [tab, setTab] = useState<Tab>(openDmUserId ? "direct" : defaultTab);
   const [activeThreadId, setActiveThreadId] = useState<string | null>(null);
@@ -84,7 +83,8 @@ export default function ChatPanel({
     fetchWorld();
     fetchThreads(user.id);
     fetchReads(user.id);
-  }, [user, fetchGroups, fetchWorld, fetchThreads, fetchReads]);
+    fetchOverview(user.id);
+  }, [user, fetchGroups, fetchWorld, fetchThreads, fetchReads, fetchOverview]);
 
   useEffect(() => {
     if (!user || !openDmUserId) return;
@@ -113,14 +113,6 @@ export default function ChatPanel({
   useEffect(() => {
     dmRef.current?.scrollTo({ top: dmRef.current.scrollHeight });
   }, [dmMessages.length]);
-
-  // prefetch messages for all threads + groups so unread badges work
-  useEffect(() => {
-    threads.forEach((t) => fetchDirectMessages(t.id));
-  }, [threads, fetchDirectMessages]);
-  useEffect(() => {
-    groups.forEach((g) => fetchGroupMessages(g.id));
-  }, [groups, fetchGroupMessages]);
 
   // DM: capture divider + mark read on open, keep read while viewing
   useEffect(() => {
@@ -160,15 +152,9 @@ export default function ChatPanel({
 
   const activeThread = useMemo(() => threads.find((t) => t.id === activeThreadId) ?? null, [threads, activeThreadId]);
   const activeOther = activeThread && user ? otherOf(activeThread, user.id) : null;
-  const unreadCount = (items: { authorId: string; createdAt: string }[], key: string) => {
-    const t = lastReadByConv[key];
-    return items.reduce((n, m) => n + (m.authorId !== user?.id && (!t || m.createdAt > t) ? 1 : 0), 0);
-  };
-  const threadUnread = (th: DirectThread) =>
-    unreadCount((messagesByThread[th.id] ?? []).map((m) => ({ authorId: m.senderId, createdAt: m.createdAt })), "dm:" + th.id);
-  const groupUnread = (g: ChatGroup) =>
-    unreadCount((messagesByGroup[g.id] ?? []).map((m) => ({ authorId: m.userId, createdAt: m.createdAt })), "group:" + g.id);
-  const worldUnread = unreadCount(worldMessages.map((m) => ({ authorId: m.userId, createdAt: m.createdAt })), "world");
+  const threadUnread = (th: DirectThread) => overview?.threads[th.id]?.unread ?? 0;
+  const groupUnread = (g: ChatGroup) => overview?.groups[g.id] ?? 0;
+  const worldUnread = overview?.world ?? 0;
   const directUnread = threads.reduce((n, th) => n + threadUnread(th), 0);
   const groupsUnread = groups.reduce((n, g) => n + groupUnread(g), 0);
 
@@ -327,7 +313,7 @@ export default function ChatPanel({
                 <ul>
                   {threads.map((t) => {
                     const o = otherOf(t, user.id);
-                    const last = (messagesByThread[t.id] ?? []).at(-1);
+                    const last = overview?.threads[t.id]?.last ?? null;
                     return (
                       <li key={t.id}>
                         <button onClick={() => setActiveThreadId(t.id)} className="flex w-full items-center gap-3 border-b border-line px-3 py-2.5 text-left hover:bg-slate-50">

@@ -25,6 +25,7 @@ import {
   toggleReactionRemote,
   listReads,
   markReadRemote,
+  chatOverview,
 } from "@/lib/data/services";
 import { USE_PRISMA } from "@/lib/api";
 import { useAuthStore } from "@/lib/store/auth-store";
@@ -34,6 +35,7 @@ import type {
   DirectThread,
   Message,
   MessageContentType,
+  ChatOverview,
   Profile,
   Reaction,
   WorldMessage,
@@ -55,6 +57,7 @@ interface ChatState {
   messagesByThread: Record<string, DirectMessage[]>;
   reactionsByMessage: Record<string, Reaction[]>;
   lastReadByConv: Record<string, string>; // conversation key → ISO of last read
+  overview: ChatOverview | null; // batched unread + last-message per conversation
 
   fetchGroups: (userId?: string) => Promise<void>;
   fetchWorld: () => Promise<void>;
@@ -89,6 +92,7 @@ interface ChatState {
 
   toggleReaction: (messageId: string, emoji: string, user: Profile) => void;
   markRead: (convKey: string) => void;
+  fetchOverview: (userId: string) => Promise<void>;
   fetchReactions: (messageIds: string[]) => Promise<void>;
   fetchReads: (userId: string) => Promise<void>;
 
@@ -110,6 +114,7 @@ export const useChatStore = create<ChatState>((set, get) => ({
   messagesByThread: {},
   reactionsByMessage: {},
   lastReadByConv: {},
+  overview: null,
 
   async fetchGroups(userId) {
     const id = userId ?? get().groupsUserId;
@@ -238,9 +243,24 @@ export const useChatStore = create<ChatState>((set, get) => ({
   },
 
   markRead(convKey) {
-    set({ lastReadByConv: { ...get().lastReadByConv, [convKey]: new Date().toISOString() } });
+    const ov = get().overview;
+    let nextOv = ov;
+    if (ov) {
+      if (convKey === "world") nextOv = { ...ov, world: 0 };
+      else if (convKey.startsWith("group:")) nextOv = { ...ov, groups: { ...ov.groups, [convKey.slice(6)]: 0 } };
+      else if (convKey.startsWith("dm:")) {
+        const id = convKey.slice(3);
+        const t = ov.threads[id];
+        if (t) nextOv = { ...ov, threads: { ...ov.threads, [id]: { ...t, unread: 0 } } };
+      }
+    }
+    set({ lastReadByConv: { ...get().lastReadByConv, [convKey]: new Date().toISOString() }, overview: nextOv });
     const uid = useAuthStore.getState().user?.id;
     if (uid) void markReadRemote(uid, convKey);
+  },
+
+  async fetchOverview(userId) {
+    set({ overview: await chatOverview(userId) });
   },
 
   toggleReaction(messageId, emoji, user) {

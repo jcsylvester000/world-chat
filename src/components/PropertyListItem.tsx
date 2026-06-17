@@ -4,7 +4,7 @@ import { memo } from "react";
 import Link from "next/link";
 import Badge from "@/components/ui/Badge";
 import FavoriteButton from "@/components/FavoriteButton";
-import { formatDate, formatPeso } from "@/lib/utils";
+import { formatDate, formatPeso, thumb } from "@/lib/utils";
 import type { Property } from "@/lib/types";
 
 // Compact horizontal listing row — small thumbnail so many fit in the
@@ -27,7 +27,7 @@ function PropertyListItem({
         {property.photos[0] && (
           // eslint-disable-next-line @next/next/no-img-element
           <img
-            src={property.photos[0]}
+            src={thumb(property.photos[0], 160)}
             alt={property.title}
             loading="lazy"
             decoding="async"
