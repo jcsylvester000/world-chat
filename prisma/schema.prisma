@@ -383,6 +383,7 @@ model PropertyRequest {
   loiFilename   String?
   atsProvidedFilename String?
   status        RequestStatus @default(pending)
+  leadId        String?
   createdAt     DateTime      @default(now())
 
   messages RequestMessage[]

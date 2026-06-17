@@ -173,6 +173,7 @@ export interface PropertyRequest {
   loiFilename?: string; // LOI attachment the buyer provided
   atsProvidedFilename?: string; // ATS attachment the owner provided back
   status: RequestStatus;
+  leadId?: string; // set once converted to a Leads Board card
   createdAt: string;
 }
 

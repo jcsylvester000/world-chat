@@ -1603,3 +1603,37 @@ export async function deleteLeadActivity(id: string): Promise<void> {
   if (i >= 0) leadActivities.splice(i, 1);
   await latency(null);
 }
+
+// ─── Convert an inbound Request into a Leads Board card ─────────
+// The Request lives in this layer; the Lead is created in Neon via createLead,
+// then the request is tagged with the new lead's id so it isn't re-converted.
+export async function convertRequestToLead(
+  requestId: string,
+  ownerId: string,
+  ownerEmail: string
+): Promise<Lead | undefined> {
+  const req = propertyRequests.find((r) => r.id === requestId);
+  if (!req || req.leadId) return undefined;
+  const prop = properties.find((p) => p.id === req.propertyId);
+  const lead = await createLead({
+    ownerId,
+    ownerEmail,
+    title: `${req.requesterName} — ${req.propertyTitle}`,
+    description: req.message || `Converted from a ${req.kind === "ats" ? "an ATS" : "documents"} request via World Chat.`,
+    value: prop?.price ?? 0,
+    contactName: req.requesterName,
+    contactEmail: req.requesterEmail,
+    contactPhone: "",
+    propertyId: req.propertyId,
+    propertyTitle: req.propertyTitle,
+    sourceId: "lsrc-worldchat",
+    typeId: "lt-buyer",
+    stageId: "ls-new",
+    status: "open",
+    expectedCloseDate: null,
+    closedAt: null,
+    lostReason: null,
+  });
+  req.leadId = lead.id;
+  return lead;
+}

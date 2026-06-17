@@ -1,5 +1,6 @@
 import { create } from "zustand";
 import {
+  convertRequestToLead,
   createPropertyRequest,
   listRequestMessages,
   listRequestsByRequester,
@@ -9,6 +10,7 @@ import {
   sendRequestMessage,
 } from "@/lib/data/services";
 import type {
+  Lead,
   MessageContentType,
   Profile,
   PropertyRequest,
@@ -23,6 +25,7 @@ interface RequestsState {
   fetchMine: (userId: string) => Promise<void>;
   create: (input: Parameters<typeof createPropertyRequest>[0]) => Promise<PropertyRequest>;
   respond: (requestId: string, approve: boolean, ownerId: string) => Promise<void>;
+  convertToLead: (requestId: string, ownerId: string, ownerEmail: string) => Promise<Lead | undefined>;
   provideAts: (requestId: string, atsFilename: string, ownerId: string) => Promise<void>;
   fetchMessages: (requestId: string) => Promise<void>;
   sendMessage: (
@@ -52,6 +55,11 @@ export const useRequestsStore = create<RequestsState>((set, get) => ({
   async respond(requestId, approve, ownerId) {
     await respondToRequest(requestId, approve);
     await get().fetchOwner(ownerId);
+  },
+  async convertToLead(requestId, ownerId, ownerEmail) {
+    const lead = await convertRequestToLead(requestId, ownerId, ownerEmail);
+    await get().fetchOwner(ownerId);
+    return lead;
   },
   async provideAts(requestId, atsFilename, ownerId) {
     await provideAts(requestId, atsFilename);

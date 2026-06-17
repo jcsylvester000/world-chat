@@ -26,6 +26,7 @@ export default function RequestsPanel({ openId }: { openId?: string | null }) {
     fetchOwner,
     fetchMine,
     respond,
+    convertToLead,
     provideAts,
     fetchMessages,
     sendMessage,
@@ -89,6 +90,19 @@ export default function RequestsPanel({ openId }: { openId?: string | null }) {
     const f = e.target.files?.[0];
     e.target.value = "";
     if (f) doProvideAts(f.name);
+  };
+
+  const convertLead = async () => {
+    if (!active || busy) return;
+    setBusy(true);
+    try {
+      await convertToLead(active.id, user.id, user.email);
+      flash("➕ Added to your Leads Board.");
+    } catch {
+      flash("⚠️ Couldn't add to leads.");
+    } finally {
+      setBusy(false);
+    }
   };
 
   const approveDocs = async () => {
@@ -217,6 +231,20 @@ export default function RequestsPanel({ openId }: { openId?: string | null }) {
                     <button onClick={() => setDoc({ kind: "ats", req: active })} className="btn-outline !py-1.5 text-xs">📜 View ATS</button>
                   )}
                 </div>
+
+                {isOwnerOf(active) && (user.plan === "premium" || user.isAdmin) && (
+                  <div className="mt-3">
+                    {active.leadId ? (
+                      <Link href="/leads" className="inline-flex items-center gap-1 rounded-lg bg-emerald-50 px-3 py-1.5 text-xs font-medium text-emerald-700">
+                        ✓ Added to your Leads Board →
+                      </Link>
+                    ) : (
+                      <button onClick={convertLead} disabled={busy} className="btn-outline !py-1.5 text-xs">
+                        ➕ Add to Leads Board
+                      </button>
+                    )}
+                  </div>
+                )}
 
                 {/* OWNER decision */}
                 {isOwnerOf(active) && active.status === "pending" && (

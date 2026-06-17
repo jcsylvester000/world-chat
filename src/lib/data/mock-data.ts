@@ -541,7 +541,7 @@ export const propertyRequests: PropertyRequest[] = [
     requesterEmail: "rafael@cruzrealty.ph", requesterCode: "WC-RCRUZ2",
     ownerId: "u-grace", ownerEmail: "grace.tan@tanprop.ph",
     message: "Strong buyer interest from a client of mine — requesting the ATS to proceed.",
-    status: "approved", atsProvidedFilename: "kapitolyo-ats.pdf", createdAt: "2026-06-13T14:00:00.000Z" },
+    status: "approved", atsProvidedFilename: "kapitolyo-ats.pdf", leadId: "lead-13", createdAt: "2026-06-13T14:00:00.000Z" },
 ];
 
 export const requestMessages: RequestMessage[] = [
