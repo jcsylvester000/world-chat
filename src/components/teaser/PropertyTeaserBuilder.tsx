@@ -6,6 +6,20 @@ import { useAuthStore } from "@/lib/store/auth-store";
 import { fileToDataUrl } from "@/lib/utils";
 import { NEARBY_CATEGORIES, fetchNearby, type NearbyResult } from "@/lib/teaser/overpass";
 import { exportTeaserPdf, exportTeaserPng, type TeaserData } from "@/lib/teaser/teaser-export";
+import {
+  listDrafts as apiListDrafts,
+  saveDraft as apiSaveDraft,
+  deleteDraft as apiDeleteDraft,
+  getUsage,
+  recordUse,
+} from "@/lib/teaser/teaser-data";
+import {
+  BASIC_TEASER_DRAFT_CAP,
+  BASIC_TEASER_USE_CAP,
+  type TeaserDraft,
+  type TeaserForm,
+  type TeaserUsage,
+} from "@/lib/teaser/types";
 
 const LocationPicker = dynamic(() => import("@/components/LocationPicker"), {
   ssr: false,
@@ -19,16 +33,8 @@ const TEASER_TAGS = [
 const RADII = [0.5, 1, 2, 3, 5];
 const MAX_PHOTOS = 5;
 const MAX_BYTES = 3 * 1024 * 1024;
-const DRAFTS_KEY = "wc-teaser-drafts-v1";
 const DEFAULT_LAT = 14.5995;
 const DEFAULT_LNG = 120.9842;
-
-interface FormState {
-  name: string; priceNum: string; address: string; lat: number; lng: number;
-  hideLocation: boolean; description: string; lotSize: string; floorNotes: string;
-  tags: string[]; photos: string[]; selectedCats: string[]; radiusKm: number; nearby: NearbyResult | null;
-}
-interface Draft { id: string; title: string; savedAt: string; form: FormState; }
 
 export default function PropertyTeaserBuilder() {
   const user = useAuthStore((s) => s.user);
@@ -54,18 +60,23 @@ export default function PropertyTeaserBuilder() {
   const [nearbyLoading, setNearbyLoading] = useState(false);
   const [nearbyError, setNearbyError] = useState<string | null>(null);
 
-  const [drafts, setDrafts] = useState<Draft[]>([]);
+  const [drafts, setDrafts] = useState<TeaserDraft[]>([]);
+  const [usage, setUsage] = useState<TeaserUsage | null>(null);
+  const [editingId, setEditingId] = useState<string | null>(null);
   const [exporting, setExporting] = useState<"pdf" | "png" | null>(null);
-  const [recenterTok, setRecenterTok] = useState(0);
+  const [savingDraft, setSavingDraft] = useState(false);
   const [flash, setFlash] = useState<string | null>(null);
+  const [recenterTok, setRecenterTok] = useState(0);
   const fileRef = useRef<HTMLInputElement>(null);
 
-  useEffect(() => {
-    try {
-      const raw = localStorage.getItem(DRAFTS_KEY);
-      if (raw) setDrafts(JSON.parse(raw));
-    } catch { /* ignore */ }
-  }, []);
+  const showFlash = (m: string, ms = 3500) => { setFlash(m); setTimeout(() => setFlash(null), ms); };
+
+  const refresh = () => {
+    if (!user) return;
+    apiListDrafts(user.id).then(setDrafts).catch(() => { /* ignore */ });
+    getUsage(user.id).then(setUsage).catch(() => { /* ignore */ });
+  };
+  useEffect(() => { refresh(); }, [user?.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const priceText = priceNum.trim()
     ? "₱" + Number(priceNum.replace(/[^0-9.]/g, "") || 0).toLocaleString()
@@ -76,6 +87,15 @@ export default function PropertyTeaserBuilder() {
     brand, name, tags, photos, priceText, address, lat, lng, hideLocation,
     description, lotSize: lotText, floorNotes, nearby,
   }), [brand, name, tags, photos, priceText, address, lat, lng, hideLocation, description, lotText, floorNotes, nearby]);
+
+  const formState = (): TeaserForm => ({
+    name, priceNum, address, lat, lng, hideLocation, description, lotSize, floorNotes,
+    tags, photos, selectedCats, radiusKm, nearby,
+  });
+
+  const limited = !!usage && !usage.unlimited;
+  const usesLeft = usage ? Math.max(0, BASIC_TEASER_USE_CAP - usage.count) : null;
+  const atDraftCap = limited && drafts.length >= BASIC_TEASER_DRAFT_CAP;
 
   const toggle = <T,>(arr: T[], v: T) => (arr.includes(v) ? arr.filter((x) => x !== v) : [...arr, v]);
 
@@ -110,45 +130,71 @@ export default function PropertyTeaserBuilder() {
   };
 
   const doExport = async (kind: "pdf" | "png") => {
+    if (!user) return;
+    if (limited && (usesLeft ?? 0) <= 0) {
+      showFlash(`You've used your ${BASIC_TEASER_USE_CAP} free teaser exports — upgrade to Premium for unlimited.`);
+      return;
+    }
     setNearbyError(null);
     setExporting(kind);
     try {
+      const u = await recordUse(user.id); // server enforces the cap, then increments
+      setUsage(u);
       if (kind === "pdf") await exportTeaserPdf(teaser);
       else await exportTeaserPng(teaser);
     } catch (e) {
-      setNearbyError("Export failed: " + (e as Error).message);
+      setNearbyError("Export: " + (e as Error).message);
     } finally {
       setExporting(null);
     }
   };
 
-  const persist = (list: Draft[]) => {
-    setDrafts(list);
-    try { localStorage.setItem(DRAFTS_KEY, JSON.stringify(list)); return true; }
-    catch { return false; }
+  const saveDraft = async () => {
+    if (!user) return;
+    if (atDraftCap && !editingId) {
+      showFlash(`Free plan keeps ${BASIC_TEASER_DRAFT_CAP} saved draft. Delete it or upgrade to Premium for unlimited.`);
+      return;
+    }
+    setSavingDraft(true);
+    try {
+      const saved = await apiSaveDraft(user.id, { id: editingId ?? undefined, title: name.trim() || "Untitled listing", data: formState() });
+      setEditingId(saved.id);
+      setDrafts(await apiListDrafts(user.id));
+      showFlash("Draft saved to your account.");
+    } catch (e) {
+      showFlash((e as Error).message);
+    } finally {
+      setSavingDraft(false);
+    }
   };
-  const saveDraft = () => {
-    const form: FormState = { name, priceNum, address, lat, lng, hideLocation, description, lotSize, floorNotes, tags, photos, selectedCats, radiusKm, nearby };
-    const d: Draft = { id: (crypto.randomUUID?.() ?? String(Date.now())), title: name.trim() || "Untitled listing", savedAt: new Date().toISOString(), form };
-    const ok = persist([d, ...drafts].slice(0, 20));
-    setFlash(ok ? "Draft saved." : "Couldn't save — storage is full. Try fewer or smaller photos.");
-    setTimeout(() => setFlash(null), 3500);
-  };
-  const loadDraft = (d: Draft) => {
-    const f = d.form;
+
+  const loadDraft = (d: TeaserDraft) => {
+    const f = d.data;
     setName(f.name); setPriceNum(f.priceNum); setAddress(f.address); setLat(f.lat); setLng(f.lng);
     setHideLocation(f.hideLocation); setDescription(f.description); setLotSize(f.lotSize); setFloorNotes(f.floorNotes);
     setTags(f.tags); setPhotos(f.photos); setSelectedCats(f.selectedCats); setRadiusKm(f.radiusKm); setNearby(f.nearby ?? null);
+    setEditingId(d.id);
     setRecenterTok((t) => t + 1);
-    setFlash(`Loaded "${d.title}".`);
-    setTimeout(() => setFlash(null), 2500);
+    showFlash(`Loaded "${d.title}".`, 2500);
   };
-  const deleteDraft = (id: string) => persist(drafts.filter((x) => x.id !== id));
+
+  const removeDraft = async (id: string) => {
+    if (!user) return;
+    try {
+      await apiDeleteDraft(user.id, id);
+      if (editingId === id) setEditingId(null);
+      setDrafts(await apiListDrafts(user.id));
+    } catch (e) {
+      showFlash((e as Error).message);
+    }
+  };
+
   const reset = () => {
     setName(""); setPriceNum(""); setAddress(""); setLat(DEFAULT_LAT); setLng(DEFAULT_LNG);
     setHideLocation(false); setDescription(""); setLotSize(""); setFloorNotes("");
     setTags([]); setPhotos([]); setPhotoError(null);
     setSelectedCats([]); setRadiusKm(1); setNearby(null); setNearbyError(null);
+    setEditingId(null);
     setRecenterTok((t) => t + 1);
   };
 
@@ -266,8 +312,16 @@ export default function PropertyTeaserBuilder() {
 
       {/* ── PREVIEW ── */}
       <div className="space-y-3">
+        {limited && (
+          <div className="rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-800">
+            <span className="font-semibold">Free plan</span> · {usage?.count ?? 0}/{BASIC_TEASER_USE_CAP} teaser exports used · {drafts.length}/{BASIC_TEASER_DRAFT_CAP} saved draft.
+            {" "}Upgrade to Premium for unlimited exports and drafts.
+          </div>
+        )}
         <div className="flex flex-wrap items-center gap-2">
-          <button onClick={saveDraft} className="btn-outline !px-3 !py-1.5 text-sm">Save as draft</button>
+          <button onClick={saveDraft} disabled={savingDraft} className="btn-outline !px-3 !py-1.5 text-sm">
+            {savingDraft ? "Saving…" : editingId ? "Update draft" : "Save as draft"}
+          </button>
           <button onClick={() => doExport("pdf")} disabled={exporting !== null} className="btn-primary !px-3 !py-1.5 text-sm">
             {exporting === "pdf" ? "Preparing…" : "Print to PDF"}
           </button>
@@ -354,17 +408,18 @@ export default function PropertyTeaserBuilder() {
       <div className="space-y-3">
         <div className="rounded-2xl border border-line bg-white p-4 shadow-sm">
           <p className="text-sm font-bold">Saved drafts</p>
+          <p className="text-[11px] text-slate-400">Saved to your account — open them on any device.</p>
           {drafts.length === 0 ? (
-            <p className="mt-1 text-xs text-slate-400">No drafts yet.</p>
+            <p className="mt-2 text-xs text-slate-400">No drafts yet.</p>
           ) : (
             <ul className="mt-2 space-y-1.5">
               {drafts.map((d) => (
-                <li key={d.id} className="rounded-lg border border-line p-2">
+                <li key={d.id} className={`rounded-lg border p-2 ${editingId === d.id ? "border-primary bg-primary-50/40" : "border-line"}`}>
                   <p className="truncate text-sm font-medium text-ink">{d.title}</p>
-                  <p className="text-[10px] text-slate-400">{new Date(d.savedAt).toLocaleString()}</p>
+                  <p className="text-[10px] text-slate-400">{new Date(d.updatedAt).toLocaleString()}</p>
                   <div className="mt-1 flex gap-2">
                     <button onClick={() => loadDraft(d)} className="text-xs text-primary hover:underline">Load</button>
-                    <button onClick={() => deleteDraft(d.id)} className="text-xs text-rose-500 hover:underline">Delete</button>
+                    <button onClick={() => removeDraft(d.id)} className="text-xs text-rose-500 hover:underline">Delete</button>
                   </div>
                 </li>
               ))}
