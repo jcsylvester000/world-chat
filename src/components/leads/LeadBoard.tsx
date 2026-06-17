@@ -1,0 +1,184 @@
+"use client";
+
+import { useMemo, useState } from "react";
+import Modal from "@/components/Modal";
+import Button from "@/components/ui/Button";
+import LeadModal from "@/components/leads/LeadModal";
+import { useLeadsStore } from "@/lib/store/leads-store";
+import { cn, formatPesoCompact, formatDate } from "@/lib/utils";
+import { LEAD_ROTTEN_DAYS, type Lead, type Property } from "@/lib/types";
+
+const DAY = 86_400_000;
+const daysSince = (iso: string) => Math.floor((Date.now() - new Date(iso).getTime()) / DAY);
+
+export default function LeadBoard({ properties }: { properties: Pick<Property, "id" | "title">[] }) {
+  const leads = useLeadsStore((s) => s.leads);
+  const meta = useLeadsStore((s) => s.meta);
+  const move = useLeadsStore((s) => s.move);
+
+  const [editing, setEditing] = useState<Lead | "new" | null>(null);
+  const [lostPrompt, setLostPrompt] = useState<{ leadId: string; stageId: string } | null>(null);
+  const [lostReason, setLostReason] = useState("");
+  const [dragOver, setDragOver] = useState<string | null>(null);
+
+  const stages = useMemo(() => meta?.stages ?? [], [meta]);
+  const byStage = useMemo(() => {
+    const m: Record<string, Lead[]> = {};
+    for (const s of stages) m[s.id] = [];
+    for (const l of leads) (m[l.stageId] ??= []).push(l);
+    return m;
+  }, [leads, stages]);
+
+  const handleMove = (leadId: string, stageId: string) => {
+    const lead = leads.find((l) => l.id === leadId);
+    if (!lead || lead.stageId === stageId) return;
+    const stage = stages.find((s) => s.id === stageId);
+    if (stage?.isLost) {
+      setLostReason("");
+      setLostPrompt({ leadId, stageId });
+    } else {
+      move(leadId, stageId);
+    }
+  };
+
+  if (!meta) return null;
+
+  return (
+    <>
+      <div className="flex h-full gap-3 overflow-x-auto px-4 pb-4">
+        {stages.map((stage) => {
+          const items = byStage[stage.id] ?? [];
+          const total = items.reduce((sum, l) => sum + l.value, 0);
+          return (
+            <div
+              key={stage.id}
+              onDragOver={(e) => { e.preventDefault(); setDragOver(stage.id); }}
+              onDragLeave={() => setDragOver((s) => (s === stage.id ? null : s))}
+              onDrop={(e) => {
+                e.preventDefault();
+                setDragOver(null);
+                const id = e.dataTransfer.getData("text/plain");
+                if (id) handleMove(id, stage.id);
+              }}
+              className={cn(
+                "flex w-72 shrink-0 flex-col rounded-xl border bg-slate-50/60",
+                dragOver === stage.id ? "border-primary ring-2 ring-primary/30" : "border-line",
+                stage.isWon && "bg-emerald-50/60",
+                stage.isLost && "bg-rose-50/60"
+              )}
+            >
+              <div className="flex items-center justify-between border-b border-line px-3 py-2">
+                <div className="flex items-center gap-2">
+                  <span className={cn(
+                    "text-sm font-semibold",
+                    stage.isWon ? "text-emerald-700" : stage.isLost ? "text-rose-700" : "text-ink"
+                  )}>{stage.name}</span>
+                  <span className="rounded-full bg-slate-200 px-1.5 text-[11px] font-medium text-slate-600">{items.length}</span>
+                </div>
+                <span className="text-xs font-medium text-slate-500">{formatPesoCompact(total)}</span>
+              </div>
+
+              <div className="flex-1 space-y-2 overflow-y-auto p-2">
+                {items.map((l) => {
+                  const stale = l.status === "open" && daysSince(l.updatedAt) > LEAD_ROTTEN_DAYS;
+                  return (
+                    <div
+                      key={l.id}
+                      draggable
+                      onDragStart={(e) => e.dataTransfer.setData("text/plain", l.id)}
+                      onClick={() => setEditing(l)}
+                      className={cn(
+                        "cursor-pointer rounded-lg border bg-white p-2.5 shadow-sm transition hover:shadow-md",
+                        stale ? "border-amber-300 ring-1 ring-amber-200" : "border-line"
+                      )}
+                    >
+                      <div className="flex items-start justify-between gap-2">
+                        <p className="text-sm font-semibold leading-tight text-ink">{l.title}</p>
+                        <span className="shrink-0 text-xs font-semibold text-primary">{formatPesoCompact(l.value)}</span>
+                      </div>
+                      <p className="mt-1 truncate text-xs text-slate-500">{l.contactName}</p>
+                      {l.propertyTitle && (
+                        <p className="mt-1 truncate text-[11px] text-slate-400">🏢 {l.propertyTitle}</p>
+                      )}
+                      <div className="mt-2 flex flex-wrap items-center gap-1">
+                        {stale && (
+                          <span className="rounded-full bg-amber-100 px-1.5 py-0.5 text-[10px] font-medium text-amber-700">
+                            Stale · {daysSince(l.updatedAt)}d
+                          </span>
+                        )}
+                        {l.expectedCloseDate && l.status === "open" && (
+                          <span className="rounded-full bg-slate-100 px-1.5 py-0.5 text-[10px] text-slate-500">
+                            Close {formatDate(l.expectedCloseDate)}
+                          </span>
+                        )}
+                      </div>
+                      <select
+                        value={l.stageId}
+                        onClick={(e) => e.stopPropagation()}
+                        onChange={(e) => handleMove(l.id, e.target.value)}
+                        className="mt-2 w-full rounded-md border border-line bg-slate-50 px-1.5 py-1 text-[11px] text-slate-600"
+                        aria-label="Move lead to stage"
+                      >
+                        {stages.map((s) => (
+                          <option key={s.id} value={s.id}>{s.name}</option>
+                        ))}
+                      </select>
+                    </div>
+                  );
+                })}
+                {items.length === 0 && (
+                  <p className="px-1 py-4 text-center text-xs text-slate-400">Drop a lead here</p>
+                )}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+
+      {editing && (
+        <LeadModal
+          lead={editing === "new" ? null : editing}
+          meta={meta}
+          properties={properties}
+          onClose={() => setEditing(null)}
+        />
+      )}
+
+      {lostPrompt && (
+        <Modal onClose={() => setLostPrompt(null)} className="w-full max-w-md">
+          <div className="p-6">
+            <h2 className="text-lg font-bold text-ink">Mark as lost</h2>
+            <p className="mt-0.5 text-xs text-slate-500">Capture why this deal didn&apos;t close.</p>
+            <textarea
+              className="input mt-3 min-h-[90px]"
+              autoFocus
+              value={lostReason}
+              onChange={(e) => setLostReason(e.target.value)}
+              placeholder="e.g. Buyer's financing fell through; chose a competitor."
+            />
+            <div className="mt-4 flex justify-end gap-2">
+              <Button variant="outline" onClick={() => setLostPrompt(null)}>Cancel</Button>
+              <Button
+                variant="danger"
+                onClick={() => {
+                  move(lostPrompt.leadId, lostPrompt.stageId, lostReason.trim() || null);
+                  setLostPrompt(null);
+                }}
+              >
+                Mark lost
+              </Button>
+            </div>
+          </div>
+        </Modal>
+      )}
+
+      {/* Floating add button */}
+      <button
+        onClick={() => setEditing("new")}
+        className="btn-primary fixed bottom-6 right-6 z-20 !rounded-full !px-5 shadow-lg"
+      >
+        + Add lead
+      </button>
+    </>
+  );
+}

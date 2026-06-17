@@ -12,7 +12,6 @@ const NAV = [
   { label: "Map", href: "/dashboard" },
   { label: "Browse", href: "/all-listings" },
   { label: "My Listings", href: "/my-listings" },
-  { label: "Leads", href: "/leads" },
   { label: "Messages", href: "/messages" },
   { label: "People", href: "/people" },
 ];

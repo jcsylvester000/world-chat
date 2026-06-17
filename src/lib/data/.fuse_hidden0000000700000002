@@ -22,10 +22,6 @@ import {
   requestMessages,
   settings,
   worldMessages,
-  leads,
-  leadStages,
-  leadSources,
-  leadTypes,
 } from "./mock-data";
 import { matchesListingFilters } from "@/lib/filter";
 import {
@@ -60,9 +56,6 @@ import {
   type AiToolType,
   type AiRequestStatus,
   type AiFile,
-  type Lead,
-  type LeadMeta,
-  type LeadStatus,
 } from "@/lib/types";
 import { BASIC_LISTING_CAP, PREMIUM_PRICE_MONTHLY, PREMIUM_PRICE_ANNUAL, aiPrice } from "@/lib/constants";
 import * as billing from "@/lib/billing";
@@ -1185,79 +1178,4 @@ export async function reviewAiRequest(
         : "Your AI request is being processed.";
   pushNotif(r.userId, "ai_update", `AI request ${status}`, msg, "/ai-tools");
   return latency(r);
-}
-
-// ─── Leads Board ────────────────────────────────────────────────
-// Pipeline-style lead management (concepts adapted from Krayin CRM).
-// Premium-gated in the UI; the data layer dispatches to /api/leads under
-// Postgres or mutates the in-memory arrays under the mock data source.
-export async function getLeadMeta(): Promise<LeadMeta> {
-  if (USE_PRISMA) return apiGet<LeadMeta>("/api/leads/meta");
-  return latency({
-    stages: [...leadStages].sort((a, b) => a.sortOrder - b.sortOrder),
-    sources: [...leadSources],
-    types: [...leadTypes],
-  });
-}
-
-export async function listLeadsByOwner(ownerId: string): Promise<Lead[]> {
-  if (USE_PRISMA) return apiGet<Lead[]>(`/api/leads?ownerId=${encodeURIComponent(ownerId)}`);
-  return latency(
-    leads
-      .filter((l) => l.ownerId === ownerId)
-      .sort((a, b) => b.updatedAt.localeCompare(a.updatedAt))
-  );
-}
-
-export async function createLead(
-  input: Omit<Lead, "id" | "createdAt" | "updatedAt">
-): Promise<Lead> {
-  if (USE_PRISMA) return apiSend<Lead>("/api/leads", "POST", input);
-  const now = nowIso();
-  const lead: Lead = { ...input, id: uid("lead"), createdAt: now, updatedAt: now };
-  leads.unshift(lead);
-  return latency(lead);
-}
-
-export async function updateLead(
-  id: string,
-  patch: Partial<Omit<Lead, "id" | "createdAt" | "updatedAt">>
-): Promise<Lead | undefined> {
-  if (USE_PRISMA) return apiSend<Lead>(`/api/leads/${encodeURIComponent(id)}`, "PATCH", patch);
-  const l = leads.find((x) => x.id === id);
-  if (!l) return latency(undefined);
-  Object.assign(l, patch, { updatedAt: nowIso() });
-  return latency(l);
-}
-
-export async function updateLeadStage(
-  id: string,
-  stageId: string,
-  lostReason?: string | null
-): Promise<Lead | undefined> {
-  if (USE_PRISMA)
-    return apiSend<Lead>(`/api/leads/${encodeURIComponent(id)}/stage`, "PATCH", {
-      stageId,
-      lostReason,
-    });
-  const l = leads.find((x) => x.id === id);
-  if (!l) return latency(undefined);
-  const stage = leadStages.find((s) => s.id === stageId);
-  const status: LeadStatus = stage?.isWon ? "won" : stage?.isLost ? "lost" : "open";
-  l.stageId = stageId;
-  l.status = status;
-  l.closedAt = stage?.isWon || stage?.isLost ? nowIso() : null;
-  l.lostReason = stage?.isLost ? lostReason ?? null : null;
-  l.updatedAt = nowIso();
-  return latency(l);
-}
-
-export async function deleteLead(id: string): Promise<void> {
-  if (USE_PRISMA) {
-    await apiSend(`/api/leads/${encodeURIComponent(id)}`, "DELETE");
-    return;
-  }
-  const i = leads.findIndex((x) => x.id === id);
-  if (i >= 0) leads.splice(i, 1);
-  await latency(null);
 }

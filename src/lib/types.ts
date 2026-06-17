@@ -334,3 +334,61 @@ export interface Paginated<T> {
   items: T[];
   totalCount: number;
 }
+
+// ─── Leads Board (sales pipeline; concepts adapted from Krayin CRM) ──
+export type LeadStatus = "open" | "won" | "lost";
+
+// A pipeline stage = one Kanban column. Ordered by sortOrder; probability is
+// the win likelihood; won/lost flags mark the terminal columns.
+export interface LeadStage {
+  id: string;
+  code: string;
+  name: string;
+  sortOrder: number;
+  probability: number;
+  isWon: boolean;
+  isLost: boolean;
+}
+
+export interface LeadSource {
+  id: string;
+  name: string;
+}
+
+export interface LeadType {
+  id: string;
+  name: string;
+}
+
+export interface Lead {
+  id: string;
+  ownerId: string;
+  ownerEmail: string;
+  title: string;
+  description: string;
+  value: number; // ₱ deal value
+  contactName: string;
+  contactEmail: string;
+  contactPhone: string;
+  propertyId: string | null; // linked listing (optional)
+  propertyTitle: string | null;
+  sourceId: string;
+  typeId: string;
+  stageId: string;
+  status: LeadStatus;
+  expectedCloseDate: string | null; // ISO date
+  closedAt: string | null;
+  lostReason: string | null;
+  createdAt: string;
+  updatedAt: string; // bumps on stage move — drives the "stale" highlight
+}
+
+// Lookup bundle the board needs to render columns + form dropdowns.
+export interface LeadMeta {
+  stages: LeadStage[];
+  sources: LeadSource[];
+  types: LeadType[];
+}
+
+// Days a lead can sit untouched in a stage before it's flagged "stale".
+export const LEAD_ROTTEN_DAYS = 14;

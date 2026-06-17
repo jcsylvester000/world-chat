@@ -82,7 +82,6 @@ model Profile {
   threadsA       DirectThread[]   @relation("ThreadParticipantA")
   threadsB       DirectThread[]   @relation("ThreadParticipantB")
   directMessages DirectMessage[]
-  leads          Lead[]
 
   createdAt DateTime @default(now())
 }
@@ -111,7 +110,6 @@ model Property {
 
   attachments    PropertyAttachment[]
   requests       PropertyRequest[]
-  leads          Lead[]
 
   @@index([ownerId])
   @@index([location])
@@ -439,7 +437,6 @@ model FriendRequest {
   @@unique([fromId, toId])
   @@index([toId])
 }
-
 model AuditLog {
   id         String   @id @default(cuid())
   adminId    String
@@ -450,68 +447,4 @@ model AuditLog {
   createdAt  DateTime @default(now())
 
   @@index([createdAt])
-}
-
-// ─── Leads Board (sales pipeline) ──────────────────────────────
-enum LeadStatus {
-  open
-  won
-  lost
-}
-
-model LeadStage {
-  id          String  @id @default(cuid())
-  code        String  @unique
-  name        String
-  sortOrder   Int
-  probability Int     @default(100)
-  isWon       Boolean @default(false)
-  isLost      Boolean @default(false)
-
-  leads Lead[]
-}
-
-model LeadSource {
-  id   String @id @default(cuid())
-  name String
-
-  leads Lead[]
-}
-
-model LeadType {
-  id   String @id @default(cuid())
-  name String
-
-  leads Lead[]
-}
-
-model Lead {
-  id                String     @id @default(cuid())
-  owner             Profile    @relation(fields: [ownerId], references: [id], onDelete: Cascade)
-  ownerId           String
-  ownerEmail        String
-  title             String
-  description       String     @default("")
-  value             BigInt     @default(0)
-  contactName       String
-  contactEmail      String     @default("")
-  contactPhone      String     @default("")
-  property          Property?  @relation(fields: [propertyId], references: [id], onDelete: SetNull)
-  propertyId        String?
-  propertyTitle     String?
-  source            LeadSource @relation(fields: [sourceId], references: [id])
-  sourceId          String
-  type              LeadType   @relation(fields: [typeId], references: [id])
-  typeId            String
-  stage             LeadStage  @relation(fields: [stageId], references: [id])
-  stageId           String
-  status            LeadStatus @default(open)
-  expectedCloseDate DateTime?
-  closedAt          DateTime?
-  lostReason        String?
-  createdAt         DateTime   @default(now())
-  updatedAt         DateTime   @updatedAt
-
-  @@index([ownerId])
-  @@index([stageId])
 }

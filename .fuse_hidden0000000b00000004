@@ -1,0 +1,10 @@
+# ─── Neon Postgres ──────────────────────────────────────────────
+# Pooled (PgBouncer) connection — app runtime.
+DATABASE_URL1="postgresql://neondb_owner:npg_oBj8g3TECXfs@ep-holy-dawn-aobb34fq-pooler.c-2.ap-southeast-1.aws.neon.tech/neondb?sslmode=require&pgbouncer=true&connection_limit=1"
+
+# Direct (non-pooled) connection — used ONLY by `prisma migrate` / `db push`.
+# Same host with the "-pooler" suffix removed.
+DIRECT_URL1="postgresql://neondb_owner:npg_oBj8g3TECXfs@ep-holy-dawn-aobb34fq.c-2.ap-southeast-1.aws.neon.tech/neondb?sslmode=require"
+
+# App data source: "mock" (in-memory) or "prisma" (Postgres via /api).
+NEXT_PUBLIC_DATA_SOURCE1="prisma"

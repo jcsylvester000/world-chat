@@ -1,11 +1,17 @@
 // Seed PostgreSQL with the same demo data the mock layer ships with.
 // Run with `npm run db:seed` (wired to `tsx prisma/seed.ts` via package.json).
 //
-// Scope: this seeds the Profiles + Properties slice (what the /api listings
-// endpoints serve). Extend the same way for the remaining entities as you
-// migrate each feature (payments, invoices, tickets, AI requests, chat, etc.).
+// Scope: Profiles + Properties (listings) and the Leads Board (leads + the
+// stage/source/type lookups). Extend the same way for the remaining entities.
 import { PrismaClient, type PropertyType as DbPropertyType } from "@prisma/client";
-import { profiles, properties } from "@/lib/data/mock-data";
+import {
+  profiles,
+  properties,
+  leadStages,
+  leadSources,
+  leadTypes,
+  leads,
+} from "@/lib/data/mock-data";
 import type { PropertyType } from "@/lib/types";
 
 const prisma = new PrismaClient();
@@ -21,6 +27,10 @@ const TYPE_TO_DB: Record<PropertyType, DbPropertyType> = {
 
 async function main() {
   // Clear in dependency order (dev seed — safe to wipe).
+  await prisma.lead.deleteMany();
+  await prisma.leadStage.deleteMany();
+  await prisma.leadSource.deleteMany();
+  await prisma.leadType.deleteMany();
   await prisma.propertyAttachment.deleteMany();
   await prisma.property.deleteMany();
   await prisma.profile.deleteMany();
@@ -75,7 +85,47 @@ async function main() {
     });
   }
 
-  console.log(`✅ Seeded ${profiles.length} profiles and ${properties.length} properties.`);
+  for (const s of leadStages) {
+    await prisma.leadStage.create({ data: { ...s } });
+  }
+  for (const s of leadSources) {
+    await prisma.leadSource.create({ data: { ...s } });
+  }
+  for (const t of leadTypes) {
+    await prisma.leadType.create({ data: { ...t } });
+  }
+
+  for (const l of leads) {
+    await prisma.lead.create({
+      data: {
+        id: l.id,
+        ownerId: l.ownerId,
+        ownerEmail: l.ownerEmail,
+        title: l.title,
+        description: l.description,
+        value: BigInt(Math.round(l.value)),
+        contactName: l.contactName,
+        contactEmail: l.contactEmail,
+        contactPhone: l.contactPhone,
+        propertyId: l.propertyId,
+        propertyTitle: l.propertyTitle,
+        sourceId: l.sourceId,
+        typeId: l.typeId,
+        stageId: l.stageId,
+        status: l.status,
+        expectedCloseDate: l.expectedCloseDate ? new Date(l.expectedCloseDate) : null,
+        closedAt: l.closedAt ? new Date(l.closedAt) : null,
+        lostReason: l.lostReason,
+        createdAt: new Date(l.createdAt),
+        updatedAt: new Date(l.updatedAt),
+      },
+    });
+  }
+
+  console.log(
+    `✅ Seeded ${profiles.length} profiles, ${properties.length} properties, ` +
+      `${leadStages.length} stages, ${leadSources.length} sources, ${leadTypes.length} types, ${leads.length} leads.`
+  );
 }
 
 main()
