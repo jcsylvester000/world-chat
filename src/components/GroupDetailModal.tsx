@@ -35,6 +35,8 @@ export default function GroupDetailModal({
   const renameGroup = useChatStore((s) => s.renameGroup);
   const deleteGroup = useChatStore((s) => s.deleteGroup);
   const sendGroupMessage = useChatStore((s) => s.sendGroupMessage);
+  const reactionsByMessage = useChatStore((s) => s.reactionsByMessage);
+  const toggleReaction = useChatStore((s) => s.toggleReaction);
 
   const members = useMemo(
     () => membersByGroup[group.id] ?? [],
@@ -129,6 +131,8 @@ export default function GroupDetailModal({
                 }))}
                 currentUserId={user.id}
                 myHandle={user.username}
+                reactions={reactionsByMessage}
+                onToggleReaction={(id, emoji) => toggleReaction(id, emoji, user)}
                 onReply={(m) => setReply({ id: m.id, author: m.authorEmail, preview: previewOf(m) })}
               />
             )}

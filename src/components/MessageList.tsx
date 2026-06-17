@@ -2,7 +2,7 @@
 
 import ChatBubble from "@/components/ChatBubble";
 import { cn } from "@/lib/utils";
-import type { MessageContentType } from "@/lib/types";
+import type { MessageContentType, Reaction } from "@/lib/types";
 
 // Normalized message shape so DMs, group, and world chat share one renderer.
 export interface ChatMsg {
@@ -36,12 +36,16 @@ export default function MessageList({
   showAuthors = true,
   onReply,
   myHandle,
+  reactions,
+  onToggleReaction,
 }: {
   messages: ChatMsg[];
   currentUserId: string;
   showAuthors?: boolean;
   onReply?: (m: ChatMsg) => void;
   myHandle?: string;
+  reactions?: Record<string, Reaction[]>;
+  onToggleReaction?: (messageId: string, emoji: string) => void;
 }) {
   return (
     <>
@@ -80,6 +84,9 @@ export default function MessageList({
                 replyToPreview={m.replyToPreview}
                 onReply={onReply ? () => onReply(m) : undefined}
                 myHandle={myHandle}
+                currentUserId={currentUserId}
+                reactions={reactions?.[m.id]}
+                onReact={onToggleReaction ? (emoji) => onToggleReaction(m.id, emoji) : undefined}
               />
             </div>
           </div>

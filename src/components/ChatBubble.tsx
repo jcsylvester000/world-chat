@@ -1,9 +1,12 @@
 "use client";
 
+import { useState } from "react";
 import Avatar from "@/components/ui/Avatar";
 import MessageText from "@/components/MessageText";
 import { cn, displayName, formatTime } from "@/lib/utils";
-import type { MessageContentType } from "@/lib/types";
+import type { MessageContentType, Reaction } from "@/lib/types";
+
+const QUICK = ["👍", "❤️", "😂", "🎉", "😮", "😢"];
 
 export default function ChatBubble({
   email,
@@ -18,6 +21,9 @@ export default function ChatBubble({
   replyToPreview,
   onReply,
   myHandle,
+  currentUserId,
+  reactions,
+  onReact,
 }: {
   email: string;
   content: string;
@@ -31,13 +37,31 @@ export default function ChatBubble({
   replyToPreview?: string;
   onReply?: () => void;
   myHandle?: string;
+  currentUserId?: string;
+  reactions?: Reaction[];
+  onReact?: (emoji: string) => void;
 }) {
+  const [pickOpen, setPickOpen] = useState(false);
   const hasHeader = showAuthor && !mine && !continuation;
   const mentionsMe =
     !mine &&
     !!myHandle &&
     contentType === "text" &&
     new RegExp(`@${myHandle.replace(/\./g, "\\.")}\\b`, "i").test(content);
+
+  // group reactions by emoji → { count, mine }
+  const byEmoji = new Map<string, { count: number; mine: boolean }>();
+  for (const r of reactions ?? []) {
+    const e = byEmoji.get(r.emoji) ?? { count: 0, mine: false };
+    e.count++;
+    if (r.userId === currentUserId) e.mine = true;
+    byEmoji.set(r.emoji, e);
+  }
+  const react = (emoji: string) => {
+    onReact?.(emoji);
+    setPickOpen(false);
+  };
+
   return (
     <div className={cn("group flex items-center gap-2", mine && "flex-row-reverse")}>
       {!mine &&
@@ -46,7 +70,7 @@ export default function ChatBubble({
         ) : (
           <Avatar email={email} size={32} className={cn("self-end", hasHeader ? "mb-4" : "")} />
         ))}
-      <div className={cn("max-w-[75%]", mine && "items-end text-right")}>
+      <div className={cn("flex max-w-[75%] flex-col", mine && "items-end text-right")}>
         {hasHeader && (
           <p className="mb-0.5 text-xs font-medium text-slate-500">{displayName(email)}</p>
         )}
@@ -81,17 +105,74 @@ export default function ChatBubble({
             <MessageText content={content} mine={mine} myHandle={myHandle} />
           )}
         </div>
+
+        {byEmoji.size > 0 && (
+          <div className={cn("mt-1 flex flex-wrap gap-1", mine && "justify-end")}>
+            {[...byEmoji.entries()].map(([emoji, info]) => (
+              <button
+                key={emoji}
+                onClick={() => onReact?.(emoji)}
+                type="button"
+                className={cn(
+                  "inline-flex items-center gap-1 rounded-full border px-1.5 py-0.5 text-xs transition",
+                  info.mine
+                    ? "border-primary bg-primary-50 text-primary"
+                    : "border-line bg-white text-slate-600 hover:bg-slate-50"
+                )}
+                title="Toggle reaction"
+              >
+                <span>{emoji}</span>
+                <span>{info.count}</span>
+              </button>
+            ))}
+          </div>
+        )}
+
         {!continuation && <p className="mt-0.5 text-[10px] text-slate-400">{formatTime(createdAt)}</p>}
       </div>
-      {onReply && (
-        <button
-          onClick={onReply}
-          className="shrink-0 rounded-full px-1.5 py-0.5 text-sm text-slate-400 opacity-0 transition hover:bg-slate-100 hover:text-ink group-hover:opacity-100"
-          title="Reply"
-          type="button"
-        >
-          ↩
-        </button>
+
+      {(onReply || onReact) && (
+        <div className="relative flex shrink-0 items-center gap-0.5 self-center opacity-0 transition group-hover:opacity-100">
+          {onReact && (
+            <button
+              onClick={() => setPickOpen((v) => !v)}
+              className="rounded-full px-1.5 py-0.5 text-sm text-slate-400 hover:bg-slate-100 hover:text-ink"
+              title="Add reaction"
+              type="button"
+            >
+              🙂
+            </button>
+          )}
+          {onReply && (
+            <button
+              onClick={onReply}
+              className="rounded-full px-1.5 py-0.5 text-sm text-slate-400 hover:bg-slate-100 hover:text-ink"
+              title="Reply"
+              type="button"
+            >
+              ↩
+            </button>
+          )}
+          {pickOpen && onReact && (
+            <div
+              className={cn(
+                "absolute bottom-full z-20 mb-1 flex gap-1 rounded-full border border-line bg-white px-2 py-1 shadow-lg",
+                mine ? "left-0" : "right-0"
+              )}
+            >
+              {QUICK.map((emoji) => (
+                <button
+                  key={emoji}
+                  onClick={() => react(emoji)}
+                  type="button"
+                  className="grid h-7 w-7 place-items-center rounded-full text-base transition hover:bg-slate-100"
+                >
+                  {emoji}
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
       )}
     </div>
   );

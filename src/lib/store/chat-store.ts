@@ -23,6 +23,7 @@ import type {
   Message,
   MessageContentType,
   Profile,
+  Reaction,
   WorldMessage,
 } from "@/lib/types";
 
@@ -40,6 +41,7 @@ interface ChatState {
   worldMessages: WorldMessage[];
   threads: DirectThread[];
   messagesByThread: Record<string, DirectMessage[]>;
+  reactionsByMessage: Record<string, Reaction[]>;
 
   fetchGroups: (userId?: string) => Promise<void>;
   fetchWorld: () => Promise<void>;
@@ -71,6 +73,8 @@ interface ChatState {
     content: string,
     opts?: SendOpts
   ) => Promise<void>;
+
+  toggleReaction: (messageId: string, emoji: string, user: Profile) => void;
 }
 
 export const useChatStore = create<ChatState>((set, get) => ({
@@ -81,6 +85,7 @@ export const useChatStore = create<ChatState>((set, get) => ({
   worldMessages: [],
   threads: [],
   messagesByThread: {},
+  reactionsByMessage: {},
 
   async fetchGroups(userId) {
     const id = userId ?? get().groupsUserId;
@@ -174,5 +179,15 @@ export const useChatStore = create<ChatState>((set, get) => ({
       replyToPreview: opts?.replyTo?.preview,
     });
     await get().fetchDirectMessages(threadId);
+  },
+
+  toggleReaction(messageId, emoji, user) {
+    const map = get().reactionsByMessage;
+    const list = map[messageId] ?? [];
+    const has = list.some((r) => r.emoji === emoji && r.userId === user.id);
+    const next = has
+      ? list.filter((r) => !(r.emoji === emoji && r.userId === user.id))
+      : [...list, { emoji, userId: user.id, userEmail: user.email }];
+    set({ reactionsByMessage: { ...map, [messageId]: next } });
   },
 }));

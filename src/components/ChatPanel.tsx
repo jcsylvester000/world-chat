@@ -46,6 +46,8 @@ export default function ChatPanel({
   const sendDirect = useChatStore((s) => s.sendDirect);
   const sendWorld = useChatStore((s) => s.sendWorld);
   const openThread = useChatStore((s) => s.openThread);
+  const reactionsByMessage = useChatStore((s) => s.reactionsByMessage);
+  const toggleReaction = useChatStore((s) => s.toggleReaction);
 
   const [tab, setTab] = useState<Tab>(openDmUserId ? "direct" : defaultTab);
   const [activeThreadId, setActiveThreadId] = useState<string | null>(null);
@@ -169,6 +171,8 @@ export default function ChatPanel({
                 currentUserId={user.id}
                 showAuthors={false}
                 myHandle={user.username}
+                reactions={reactionsByMessage}
+                onToggleReaction={(id, emoji) => toggleReaction(id, emoji, user)}
                 onReply={(m) => setDmReply({ id: m.id, author: m.authorEmail, preview: previewOf(m) })}
               />
             </div>
@@ -256,6 +260,8 @@ export default function ChatPanel({
               }))}
               currentUserId={user.id}
               myHandle={user.username}
+              reactions={reactionsByMessage}
+              onToggleReaction={(id, emoji) => toggleReaction(id, emoji, user)}
               onReply={(m) => setWorldReply({ id: m.id, author: m.authorEmail, preview: previewOf(m) })}
             />
           </div>

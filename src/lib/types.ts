@@ -107,6 +107,13 @@ export interface ChatGroup {
 
 export type MessageContentType = "text" | "image" | "attachment";
 
+// Emoji reaction on a chat message (keyed by message id in the store).
+export interface Reaction {
+  emoji: string;
+  userId: string;
+  userEmail: string;
+}
+
 export interface Message {
   replyToId?: string;
   replyToAuthor?: string; // email of the quoted author
