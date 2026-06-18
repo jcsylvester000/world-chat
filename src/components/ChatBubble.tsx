@@ -133,7 +133,7 @@ export default function ChatBubble({
             className={cn(
               "inline-block rounded-2xl px-3 py-2 text-left text-sm",
               mine
-                ? "rounded-br-sm bg-primary text-white"
+                ? "rounded-br-sm bg-gradient-to-br from-primary to-indigo-600 text-white shadow-sm"
                 : "rounded-bl-sm bg-white text-ink shadow-sm ring-1 ring-line",
               mentionsMe && "bg-amber-50 ring-amber-300",
               deleted && "italic text-slate-400"

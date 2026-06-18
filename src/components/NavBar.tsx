@@ -42,10 +42,10 @@ export default function NavBar() {
     pathname === href || pathname.startsWith(href + "/");
 
   return (
-    <nav className="z-30 flex h-16 items-center justify-between border-b border-line bg-white/90 px-4 backdrop-blur sm:px-6">
+    <nav className="sticky top-0 z-30 flex h-16 items-center justify-between border-b border-line glass px-4 shadow-[0_1px_0_rgba(15,23,42,0.04)] sm:px-6">
       <div className="flex items-center gap-6">
-        <Link href="/dashboard" className="flex items-center gap-2">
-          <span className="grid h-9 w-9 place-items-center rounded-xl bg-gradient-to-br from-primary to-indigo-600 font-bold text-white shadow-sm">
+        <Link href="/dashboard" className="group flex items-center gap-2">
+          <span className="grid h-9 w-9 place-items-center rounded-xl bg-gradient-to-br from-primary to-indigo-600 font-bold text-white shadow-sm transition group-hover:scale-105 group-hover:shadow-md">
             W
           </span>
           <span className="text-lg font-bold tracking-tight text-ink">
@@ -61,7 +61,7 @@ export default function NavBar() {
               className={cn(
                 "rounded-lg px-3 py-2 text-sm font-medium transition",
                 isActive(n.href)
-                  ? "bg-primary-50 text-primary"
+                  ? "bg-primary-50 text-primary ring-1 ring-primary-100"
                   : "text-slate-600 hover:bg-slate-100 hover:text-ink"
               )}
             >

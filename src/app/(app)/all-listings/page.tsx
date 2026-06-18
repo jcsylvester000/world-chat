@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import FiltersBar from "@/components/FiltersBar";
 import SaveSearchButton from "@/components/SaveSearchButton";
 import PropertyCard from "@/components/PropertyCard";
-import Spinner from "@/components/ui/Spinner";
+import { PropertyCardSkeleton } from "@/components/ui/Skeleton";
 import EmptyState from "@/components/ui/EmptyState";
 import { useListingsStore } from "@/lib/store/listings-store";
 import { useAuthStore } from "@/lib/store/auth-store";
@@ -41,7 +41,9 @@ export default function AllListingsPage() {
       <FiltersBar />
 
       {loading && items.length === 0 ? (
-        <Spinner />
+        <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
+          {Array.from({ length: 6 }).map((_, i) => <PropertyCardSkeleton key={i} />)}
+        </div>
       ) : items.length === 0 ? (
         <EmptyState
           icon="🔍"

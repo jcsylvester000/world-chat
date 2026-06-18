@@ -19,7 +19,7 @@ function PropertyListItem({
   currentUserId?: string;
 }) {
   return (
-    <div className="flex gap-3 rounded-xl border border-line bg-white p-2 transition hover:shadow-sm">
+    <div className="flex gap-3 rounded-xl border border-line bg-white p-2 transition duration-200 hover:-translate-y-0.5 hover:border-slate-300 hover:shadow-md">
       <Link
         href={`/listings/${property.id}`}
         className="h-16 w-20 shrink-0 overflow-hidden rounded-lg bg-slate-100"

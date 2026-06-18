@@ -72,7 +72,7 @@ export default function Modal({
 
   return (
     <div
-      className="fixed inset-0 z-[10000] flex items-center justify-center bg-slate-900/50 p-4 backdrop-blur-sm"
+      className="fixed inset-0 z-[10000] flex animate-fade-in items-center justify-center bg-slate-900/50 p-4 backdrop-blur-sm"
       onClick={(e) => e.target === e.currentTarget && onClose()}
     >
       <div
@@ -81,7 +81,7 @@ export default function Modal({
         aria-modal="true"
         tabIndex={-1}
         className={cn(
-          "relative max-h-[92vh] w-full max-w-lg overflow-y-auto rounded-2xl bg-white p-6 shadow-2xl outline-none",
+          "relative max-h-[92vh] w-full max-w-lg animate-pop overflow-y-auto rounded-2xl bg-white p-6 shadow-2xl outline-none",
           className
         )}
       >

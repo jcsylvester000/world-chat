@@ -22,7 +22,7 @@ function PropertyCard({
   const cover = thumb(property.photos[0], 640);
 
   return (
-    <div className="group flex flex-col overflow-hidden rounded-2xl border border-line bg-white shadow-sm transition hover:-translate-y-0.5 hover:shadow-md">
+    <div className="group card hover-lift flex flex-col overflow-hidden">
       <Link href={`/listings/${property.id}`} className="relative block">
         <div className="aspect-[16/10] overflow-hidden bg-slate-100">
           {cover ? (
@@ -63,7 +63,7 @@ function PropertyCard({
         <p className="mt-0.5 text-sm text-slate-500">📍 {property.location}</p>
         <p className="text-xs text-slate-400">Listed {formatDate(property.createdAt)}</p>
 
-        <p className="mt-2 text-lg font-bold text-ink">
+        <p className="mt-2 text-xl font-extrabold text-ink">
           {property.showPrice ? (
             formatPeso(property.price)
           ) : (

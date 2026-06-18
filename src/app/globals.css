@@ -2,9 +2,8 @@
 @import "leaflet/dist/leaflet.css";
 
 /* ─── Design tokens (Modern marketplace, light) ─────────────────
-   A clean, trustworthy palette: blue primary + emerald accent on
-   soft slate surfaces. Exposed as Tailwind utilities, e.g.
-   bg-primary, text-accent, border-line. */
+   Blue primary + emerald accent on soft slate surfaces, exposed as
+   Tailwind utilities (bg-primary, text-accent, border-line, …). */
 @theme {
   --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
 
@@ -12,20 +11,24 @@
   --color-primary-dark: #1d4ed8;
   --color-primary-50: #eff6ff;
   --color-primary-100: #dbeafe;
+  --color-primary-600: #2563eb;
+  --color-primary-700: #1d4ed8;
+
+  --color-indigo: #4f46e5;
 
   --color-accent: #059669;
   --color-accent-dark: #047857;
+  --color-accent-50: #ecfdf5;
 
   --color-ink: #0f172a;
   --color-muted: #64748b;
-  --color-line: #e7ebf0;
+  --color-line: #e6eaf1;
   --color-surface: #ffffff;
-  --color-canvas: #f5f7fa;
+  --color-canvas: #f4f6fb;
 
   --color-danger: #dc2626;
   --color-warning: #d97706;
 
-  /* Legacy brand tokens kept so nothing breaks during the rollout. */
   --color-brand-navy: #0f172a;
   --color-brand-navy-light: #1e293b;
   --color-brand-blue: #2563eb;
@@ -34,76 +37,125 @@
   --color-brand-amber: #d97706;
 
   --radius-xl: 0.9rem;
-  --radius-2xl: 1.1rem;
+  --radius-2xl: 1.15rem;
+}
+
+:root {
+  --shadow-xs: 0 1px 2px rgba(15, 23, 42, 0.05);
+  --shadow-card: 0 1px 2px rgba(15, 23, 42, 0.04), 0 12px 30px -18px rgba(15, 23, 42, 0.22);
+  --shadow-lift: 0 2px 4px rgba(15, 23, 42, 0.05), 0 22px 44px -20px rgba(37, 99, 235, 0.32);
+  --shadow-pop: 0 24px 60px -16px rgba(15, 23, 42, 0.3);
 }
 
 @layer base {
-  html {
-    height: 100%;
-  }
+  html { height: 100%; }
   body {
     min-height: 100%;
-    background: var(--color-canvas);
+    background:
+      radial-gradient(1100px 520px at 100% -10%, rgba(37, 99, 235, 0.06), transparent 60%),
+      radial-gradient(900px 480px at -10% 0%, rgba(79, 70, 229, 0.05), transparent 55%),
+      var(--color-canvas);
+    background-attachment: fixed;
     color: var(--color-ink);
     font-family: var(--font-sans);
     -webkit-font-smoothing: antialiased;
   }
-  h1, h2, h3, h4 {
-    letter-spacing: -0.01em;
-  }
-  * {
-    scrollbar-width: thin;
-    scrollbar-color: #cbd5e1 transparent;
-  }
-  *::-webkit-scrollbar {
-    width: 8px;
-    height: 8px;
-  }
-  *::-webkit-scrollbar-thumb {
-    background: #cbd5e1;
-    border-radius: 9999px;
-  }
+  h1, h2, h3, h4 { letter-spacing: -0.018em; }
+  * { scrollbar-width: thin; scrollbar-color: #cbd5e1 transparent; }
+  *::-webkit-scrollbar { width: 8px; height: 8px; }
+  *::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 9999px; }
+  *::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
 }
 
 @layer components {
-  .btn,
-  .btn-primary,
-  .btn-accent,
-  .btn-ghost,
-  .btn-outline,
-  .btn-danger {
-    @apply inline-flex items-center justify-center gap-2 rounded-lg px-4 py-2 text-sm font-semibold transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 disabled:cursor-not-allowed disabled:opacity-50;
+  .btn, .btn-primary, .btn-accent, .btn-ghost, .btn-outline, .btn-danger {
+    @apply inline-flex items-center justify-center gap-2 rounded-lg px-4 py-2 text-sm font-semibold transition-all duration-150 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 active:scale-[0.97] disabled:cursor-not-allowed disabled:opacity-50 disabled:active:scale-100;
   }
   .btn-primary {
-    @apply bg-primary text-white shadow-sm hover:bg-primary-dark;
+    @apply text-white;
+    background-image: linear-gradient(180deg, #3b82f6, #2563eb);
+    box-shadow: 0 1px 2px rgba(37, 99, 235, 0.25), 0 8px 20px -12px rgba(37, 99, 235, 0.6);
+  }
+  .btn-primary:hover {
+    background-image: linear-gradient(180deg, #2f6df0, #1d4ed8);
+    box-shadow: 0 2px 4px rgba(37, 99, 235, 0.3), 0 12px 26px -12px rgba(37, 99, 235, 0.7);
   }
   .btn-accent {
-    @apply bg-accent text-white shadow-sm hover:bg-accent-dark;
+    @apply text-white;
+    background-image: linear-gradient(180deg, #10b981, #059669);
+    box-shadow: 0 1px 2px rgba(5, 150, 105, 0.25), 0 8px 20px -12px rgba(5, 150, 105, 0.55);
   }
-  .btn-ghost {
-    @apply bg-transparent text-ink hover:bg-slate-100;
-  }
-  .btn-outline {
-    @apply border border-line bg-white text-ink hover:bg-slate-50;
-  }
-  .btn-danger {
-    @apply bg-danger text-white shadow-sm hover:opacity-90;
-  }
+  .btn-accent:hover { background-image: linear-gradient(180deg, #059669, #047857); }
+  .btn-ghost { @apply bg-transparent text-ink hover:bg-slate-100; }
+  .btn-outline { @apply border border-line bg-white text-ink shadow-xs hover:border-slate-300 hover:bg-slate-50; }
+  .btn-danger { @apply bg-danger text-white shadow-sm hover:opacity-90; }
   .input {
-    @apply w-full rounded-lg border border-line bg-white px-3 py-2 text-sm text-ink shadow-sm transition placeholder:text-slate-400 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20;
+    @apply w-full rounded-lg border border-line bg-white px-3 py-2 text-sm text-ink shadow-xs transition placeholder:text-slate-400 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20;
   }
-  .card {
-    @apply rounded-2xl border border-line bg-white shadow-sm;
+  .card { @apply rounded-2xl border border-line bg-surface; box-shadow: var(--shadow-card); }
+  .label { @apply mb-1 block text-sm font-medium text-slate-700; }
+
+  .glass {
+    background: rgba(255, 255, 255, 0.72);
+    backdrop-filter: blur(12px) saturate(140%);
+    -webkit-backdrop-filter: blur(12px) saturate(140%);
+    border-color: rgba(226, 232, 240, 0.8);
   }
-  .label {
-    @apply mb-1 block text-sm font-medium text-slate-700;
+  .text-gradient {
+    background-image: linear-gradient(90deg, #2563eb, #4f46e5 55%, #059669);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+  .hover-lift { @apply transition duration-200 ease-out; }
+  .hover-lift:hover { transform: translateY(-3px); box-shadow: var(--shadow-lift); }
+
+  .skeleton { position: relative; overflow: hidden; background: #eef2f7; }
+  .skeleton::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    transform: translateX(-100%);
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.65), transparent);
+    animation: shimmer 1.5s infinite;
+  }
+
+  .aurora { position: relative; isolation: isolate; }
+  .aurora::before {
+    content: "";
+    position: absolute;
+    inset: -25%;
+    z-index: -1;
+    background:
+      radial-gradient(38% 38% at 28% 30%, rgba(37, 99, 235, 0.35), transparent 60%),
+      radial-gradient(40% 40% at 72% 58%, rgba(79, 70, 229, 0.3), transparent 60%),
+      radial-gradient(34% 34% at 52% 82%, rgba(5, 150, 105, 0.22), transparent 60%);
+    filter: blur(40px);
+    animation: auroraMove 20s ease-in-out infinite;
   }
 }
 
-/* Leaflet fills its sized container */
-.leaflet-container {
-  width: 100%;
-  height: 100%;
-  z-index: 0;
-  font-family: var(--font-sans);
+@keyframes fadeUp { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: none; } }
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+@keyframes pop { from { opacity: 0; transform: scale(0.96); } to { opacity: 1; transform: none; } }
+@keyframes shimmer { 100% { transform: translateX(100%); } }
+@keyframes auroraMove { 0%, 100% { transform: translate(-6%, -4%) rotate(0deg); } 50% { transform: translate(6%, 5%) rotate(12deg); } }
+
+.animate-fade-up { animation: fadeUp 0.5s cubic-bezier(0.22, 1, 0.36, 1) both; }
+.animate-fade-in { animation: fadeIn 0.4s ease both; }
+.animate-pop { animation: pop 0.24s cubic-bezier(0.22, 1, 0.36, 1) both; }
+
+.stagger > * { animation: fadeUp 0.55s cubic-bezier(0.22, 1, 0.36, 1) both; }
+.stagger > *:nth-child(1) { animation-delay: 0.04s; }
+.stagger > *:nth-child(2) { animation-delay: 0.10s; }
+.stagger > *:nth-child(3) { animation-delay: 0.16s; }
+.stagger > *:nth-child(4) { animation-delay: 0.22s; }
+.stagger > *:nth-child(5) { animation-delay: 0.28s; }
+.stagger > *:nth-child(6) { animation-delay: 0.34s; }
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-fade-up, .animate-fade-in, .animate-pop, .stagger > *, .aurora::before, .skeleton::after { animation: none !important; }
+  .hover-lift:hover { transform: none; }
 }
+
+.leaflet-container { width: 100%; height: 100%; z-index: 0; font-family: var(--font-sans); }

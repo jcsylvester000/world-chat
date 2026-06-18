@@ -32,10 +32,10 @@ export default function LandingPage() {
   return (
     <div>
       {/* Hero */}
-      <section className="relative overflow-hidden">
+      <section className="aurora relative overflow-hidden">
         <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-primary-50 to-transparent" />
         <div className="relative mx-auto grid max-w-6xl items-center gap-10 px-4 py-16 sm:px-6 lg:grid-cols-2 lg:py-24">
-          <div>
+          <div className="animate-fade-up">
             <span className="inline-flex items-center gap-2 rounded-full border border-primary-100 bg-white px-3 py-1 text-xs font-medium text-primary shadow-sm">
               🌐 The world chat for real estate
             </span>
@@ -57,8 +57,8 @@ export default function LandingPage() {
           </div>
 
           {/* Hero visual */}
-          <div className="relative">
-            <div className="overflow-hidden rounded-2xl border border-line bg-white shadow-2xl">
+          <div className="relative animate-fade-up [animation-delay:140ms]">
+            <div className="hover-lift overflow-hidden rounded-2xl border border-line bg-white shadow-2xl">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img src="https://picsum.photos/seed/worldchat-hero/960/560" alt="Featured commercial property" className="h-64 w-full object-cover sm:h-80" />
               <div className="p-4">

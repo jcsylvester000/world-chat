@@ -25,14 +25,14 @@ export default function RegisterPage() {
     <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-slate-900 via-slate-800 to-blue-900 p-4">
       <div className="w-full max-w-sm">
         <div className="mb-6 text-center">
-          <Link href="/" className="mx-auto mb-3 grid h-12 w-12 place-items-center rounded-2xl bg-gradient-to-br from-primary to-indigo-600 text-xl font-bold text-white shadow-lg">
+          <Link href="/" className="mx-auto mb-3 grid h-12 w-12 animate-pop place-items-center rounded-2xl bg-gradient-to-br from-primary to-indigo-600 text-xl font-bold text-white shadow-lg">
             W
           </Link>
           <h1 className="text-2xl font-bold text-white">Create your account</h1>
           <p className="text-sm text-slate-300">Join the marketplace in seconds.</p>
         </div>
 
-        <form onSubmit={onSubmit} className="card space-y-4 p-6">
+        <form onSubmit={onSubmit} className="card animate-fade-up space-y-4 p-6">
           <div>
             <label className="label">Display name</label>
             <input

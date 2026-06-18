@@ -10,7 +10,7 @@ import PropertyListItem from "@/components/PropertyListItem";
 import Modal from "@/components/Modal";
 import AddPropertyForm from "@/components/AddPropertyForm";
 import BillingNotice from "@/components/BillingNotice";
-import Spinner from "@/components/ui/Spinner";
+import { ListRowSkeleton } from "@/components/ui/Skeleton";
 import { useAuthStore } from "@/lib/store/auth-store";
 import { usePropertyStore } from "@/lib/store/property-store";
 import { useListingsStore } from "@/lib/store/listings-store";
@@ -146,7 +146,9 @@ export default function DashboardPage() {
 
                 <div className="min-h-0 flex-1 overflow-y-auto">
                   {loading && properties.length === 0 ? (
-                    <Spinner />
+                    <div className="space-y-2 p-3">
+                      {Array.from({ length: 5 }).map((_, i) => <ListRowSkeleton key={i} />)}
+                    </div>
                   ) : pageItems.length === 0 ? (
                     <p className="p-6 text-center text-sm text-slate-400">No listings match.</p>
                   ) : (
