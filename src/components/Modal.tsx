@@ -15,13 +15,18 @@ export default function Modal({
   className?: string;
 }) {
   const dialogRef = useRef<HTMLDivElement>(null);
+  // Keep the latest onClose without re-running the setup effect on every
+  // parent render (which would otherwise steal focus from inputs on each
+  // keystroke when the modal's owner re-renders).
+  const onCloseRef = useRef(onClose);
+  onCloseRef.current = onClose;
 
   useEffect(() => {
     const prevActive = document.activeElement as HTMLElement | null;
 
     const onKey = (e: KeyboardEvent) => {
       if (e.key === "Escape") {
-        onClose();
+        onCloseRef.current();
         return;
       }
       if (e.key === "Tab" && dialogRef.current) {
@@ -46,7 +51,7 @@ export default function Modal({
     window.addEventListener("keydown", onKey);
     document.body.style.overflow = "hidden";
 
-    // Move focus into the dialog (prefer the first field, not the close button).
+    // Move focus into the dialog once, on open (prefer the first field).
     const raf = requestAnimationFrame(() => {
       const el = dialogRef.current;
       if (!el) return;
@@ -63,7 +68,7 @@ export default function Modal({
       document.body.style.overflow = "";
       prevActive?.focus?.();
     };
-  }, [onClose]);
+  }, []);
 
   return (
     <div
