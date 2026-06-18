@@ -59,8 +59,8 @@ export default function ChatPanel({
   const fetchReads = useChatStore((s) => s.fetchReads);
   const overview = useChatStore((s) => s.overview);
   const fetchOverview = useChatStore((s) => s.fetchOverview);
-  const setActiveComposer = useChatStore((s) => s.setActiveComposer);
-  const clearActiveComposer = useChatStore((s) => s.clearActiveComposer);
+  const setActiveTarget = useChatStore((s) => s.setActiveTarget);
+  const clearActiveTarget = useChatStore((s) => s.clearActiveTarget);
 
   const [tab, setTab] = useState<Tab>(openDmUserId ? "direct" : defaultTab);
   const [activeThreadId, setActiveThreadId] = useState<string | null>(null);
@@ -212,20 +212,17 @@ export default function ChatPanel({
 // Publish the currently-visible conversation so the map snapshot tool can
   // drop an image straight into it.
   useEffect(() => {
-    if (!user) { clearActiveComposer(); return; }
+    if (!user) { clearActiveTarget(); return; }
     if (tab === "direct" && activeThread) {
       const other = otherOf(activeThread, user.id);
-      setActiveComposer(
-        (url, fn) => sendDirect(activeThread.id, user, url, { contentType: "image", filename: fn }),
-        "Direct · " + displayName(other.email)
-      );
+      setActiveTarget({ kind: "dm", threadId: activeThread.id, label: "Direct · " + displayName(other.email) });
     } else if (tab === "world") {
-      setActiveComposer((url, fn) => sendWorld(user, url, { contentType: "image", filename: fn }), "World chat");
+      setActiveTarget({ kind: "world" });
     } else {
-      clearActiveComposer();
+      clearActiveTarget();
     }
-  }, [user, tab, activeThread, activeThreadId, sendDirect, sendWorld, setActiveComposer, clearActiveComposer]);
-  useEffect(() => () => clearActiveComposer(), [clearActiveComposer]);
+  }, [user, tab, activeThread, activeThreadId, setActiveTarget, clearActiveTarget]);
+  useEffect(() => () => clearActiveTarget(), [clearActiveTarget]);
 
   if (!user) return null;
 

@@ -1,10 +1,12 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import type { Map as LeafletMap } from "leaflet";
 import Modal from "@/components/Modal";
+import { useAuthStore } from "@/lib/store/auth-store";
 import { useChatStore } from "@/lib/store/chat-store";
 import { captureLeafletMap } from "@/lib/map/capture";
+import { displayName } from "@/lib/utils";
 
 const COLORS = ["#ef4444", "#2563eb", "#eab308", "#22c55e", "#111827", "#ffffff"];
 const SIZES = [3, 6, 11];
@@ -18,13 +20,22 @@ export default function MapSnapshotControl({
   getMap: () => LeafletMap | null;
   markers: { lat: number; lng: number }[];
 }) {
-  const activeSend = useChatStore((s) => s.activeSend);
-  const activeLabel = useChatStore((s) => s.activeLabel);
+  const user = useAuthStore((s) => s.user);
+  const groups = useChatStore((s) => s.groups);
+  const threads = useChatStore((s) => s.threads);
+  const activeTarget = useChatStore((s) => s.activeTarget);
+  const sendWorld = useChatStore((s) => s.sendWorld);
+  const sendDirect = useChatStore((s) => s.sendDirect);
+  const sendGroupMessage = useChatStore((s) => s.sendGroupMessage);
+  const fetchGroups = useChatStore((s) => s.fetchGroups);
+  const fetchThreads = useChatStore((s) => s.fetchThreads);
 
   const [busy, setBusy] = useState(false);
   const [open, setOpen] = useState(false);
   const [color, setColor] = useState(COLORS[0]);
   const [size, setSize] = useState(SIZES[1]);
+  const [caption, setCaption] = useState("");
+  const [dest, setDest] = useState("world");
   const [sending, setSending] = useState(false);
   const [flash, setFlash] = useState<string | null>(null);
 
@@ -32,6 +43,29 @@ export default function MapSnapshotControl({
   const viewRef = useRef<HTMLCanvasElement | null>(null);
   const strokesRef = useRef<Stroke[]>([]);
   const drawingRef = useRef<Stroke | null>(null);
+
+  const canWorld = !!user && (user.plan === "premium" || user.isAdmin);
+
+  const options = useMemo(() => {
+    const list: { key: string; label: string; disabled?: boolean }[] = [
+      { key: "world", label: canWorld ? "🌐 World chat" : "🌐 World chat (Premium only)", disabled: !canWorld },
+    ];
+    groups.forEach((g) => list.push({ key: "group:" + g.id, label: "👥 " + g.name }));
+    threads.forEach((t) => {
+      const otherEmail = t.participantEmails[t.participantIds[0] === user?.id ? 1 : 0];
+      list.push({ key: "dm:" + t.id, label: "💬 " + displayName(otherEmail) });
+    });
+    return list;
+  }, [groups, threads, user?.id, canWorld]);
+
+  const defaultDest = () => {
+    if (activeTarget?.kind === "world" && canWorld) return "world";
+    if (activeTarget?.kind === "dm") return "dm:" + activeTarget.threadId;
+    if (activeTarget?.kind === "group") return "group:" + activeTarget.groupId;
+    if (canWorld) return "world";
+    const first = options.find((o) => !o.disabled);
+    return first?.key ?? "world";
+  };
 
   const redraw = () => {
     const view = viewRef.current;
@@ -52,13 +86,21 @@ export default function MapSnapshotControl({
   };
 
   useEffect(() => {
-    if (open && viewRef.current && snapRef.current) {
+    if (!open) return;
+    if (viewRef.current && snapRef.current) {
       viewRef.current.width = snapRef.current.width;
       viewRef.current.height = snapRef.current.height;
       strokesRef.current = [];
       drawingRef.current = null;
       redraw();
     }
+    setCaption("");
+    setDest(defaultDest());
+    if (user) {
+      if (groups.length === 0) fetchGroups(user.id);
+      if (threads.length === 0) fetchThreads(user.id);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open]);
 
   const snapshot = async () => {
@@ -112,12 +154,21 @@ export default function MapSnapshotControl({
     a.download = "map-snapshot.png";
     a.click();
   };
+
+  const sendOne = async (content: string, opts?: { contentType?: "image"; filename?: string }) => {
+    if (!user) throw new Error("You need to be signed in.");
+    if (dest === "world") return sendWorld(user, content, opts);
+    if (dest.startsWith("group:")) return sendGroupMessage(dest.slice(6), user, content, opts);
+    if (dest.startsWith("dm:")) return sendDirect(dest.slice(3), user, content, opts);
+    throw new Error("Pick a destination first.");
+  };
+
   const send = async () => {
-    if (!activeSend) return;
     setSending(true);
     setFlash(null);
     try {
-      await activeSend(dataUrl(), "map-snapshot.png");
+      await sendOne(dataUrl(), { contentType: "image", filename: "map-snapshot.png" });
+      if (caption.trim()) await sendOne(caption.trim());
       setOpen(false);
       setFlash("Sent to chat ✓");
       setTimeout(() => setFlash(null), 2500);
@@ -127,6 +178,8 @@ export default function MapSnapshotControl({
       setSending(false);
     }
   };
+
+  const selectedDisabled = options.find((o) => o.key === dest)?.disabled;
 
   return (
     <>
@@ -175,14 +228,29 @@ export default function MapSnapshotControl({
               className="block h-auto w-full cursor-crosshair touch-none"
             />
           </div>
-          <p className="mt-1 text-xs text-slate-400">Draw on the snapshot to emphasize an area, then send it to your chat.</p>
+          <p className="mt-1 text-xs text-slate-400">Draw on the snapshot to emphasize an area.</p>
+
+          <div className="mt-3 grid gap-3 sm:grid-cols-2">
+            <div>
+              <label className="label">Send to</label>
+              <select className="input" value={dest} onChange={(e) => setDest(e.target.value)}>
+                {options.map((o) => (
+                  <option key={o.key} value={o.key} disabled={o.disabled}>{o.label}</option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label className="label">Caption <span className="font-normal text-slate-400">(optional)</span></label>
+              <input className="input" value={caption} onChange={(e) => setCaption(e.target.value)} placeholder="Add a note with the image…" />
+            </div>
+          </div>
 
           <div className="mt-4 flex flex-wrap items-center justify-end gap-2">
             {flash && <span className="mr-auto text-xs text-rose-500">{flash}</span>}
             <button onClick={download} className="btn-outline !px-3 !py-1.5 text-sm">Download</button>
             <button onClick={() => setOpen(false)} className="btn-outline !px-3 !py-1.5 text-sm">Cancel</button>
-            <button onClick={send} disabled={!activeSend || sending} className="btn-primary !px-3 !py-1.5 text-sm" title={activeSend ? "" : "Open a World or Direct chat to attach"}>
-              {sending ? "Sending…" : activeLabel ? `Send to ${activeLabel}` : "Open a chat to send"}
+            <button onClick={send} disabled={sending || selectedDisabled} className="btn-primary !px-3 !py-1.5 text-sm">
+              {sending ? "Sending…" : "Send to chat"}
             </button>
           </div>
         </Modal>

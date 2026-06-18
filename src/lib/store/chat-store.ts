@@ -36,6 +36,7 @@ import type {
   Message,
   MessageContentType,
   ChatOverview,
+  ChatTarget,
   Profile,
   Reaction,
   WorldMessage,
@@ -58,10 +59,9 @@ interface ChatState {
   reactionsByMessage: Record<string, Reaction[]>;
   lastReadByConv: Record<string, string>; // conversation key → ISO of last read
   overview: ChatOverview | null; // batched unread + last-message per conversation
-  // The currently-visible chat composer, so other panels (e.g. the map
-  // snapshot tool) can drop an image into the active conversation.
-  activeSend: ((dataUrl: string, filename: string) => Promise<void>) | null;
-  activeLabel: string | null;
+  // The currently-visible conversation, so other panels (e.g. the map
+  // snapshot tool) can default their destination to it.
+  activeTarget: ChatTarget | null;
 
   fetchGroups: (userId?: string) => Promise<void>;
   fetchWorld: () => Promise<void>;
@@ -97,8 +97,8 @@ interface ChatState {
   toggleReaction: (messageId: string, emoji: string, user: Profile) => void;
   markRead: (convKey: string) => void;
   fetchOverview: (userId: string) => Promise<void>;
-  setActiveComposer: (send: (dataUrl: string, filename: string) => Promise<void>, label: string) => void;
-  clearActiveComposer: () => void;
+  setActiveTarget: (target: ChatTarget) => void;
+  clearActiveTarget: () => void;
   fetchReactions: (messageIds: string[]) => Promise<void>;
   fetchReads: (userId: string) => Promise<void>;
 
@@ -121,8 +121,7 @@ export const useChatStore = create<ChatState>((set, get) => ({
   reactionsByMessage: {},
   lastReadByConv: {},
   overview: null,
-  activeSend: null,
-  activeLabel: null,
+  activeTarget: null,
 
   async fetchGroups(userId) {
     const id = userId ?? get().groupsUserId;
@@ -271,11 +270,11 @@ export const useChatStore = create<ChatState>((set, get) => ({
     set({ overview: await chatOverview(userId) });
   },
 
-  setActiveComposer(send, label) {
-    set({ activeSend: send, activeLabel: label });
+  setActiveTarget(target) {
+    set({ activeTarget: target });
   },
-  clearActiveComposer() {
-    set({ activeSend: null, activeLabel: null });
+  clearActiveTarget() {
+    set({ activeTarget: null });
   },
 
   toggleReaction(messageId, emoji, user) {

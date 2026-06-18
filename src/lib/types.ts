@@ -109,6 +109,12 @@ export type MessageContentType = "text" | "image" | "attachment";
 
 // Lightweight per-conversation summary for the messages list (one request
 // instead of fetching every conversation's full message history).
+// Where the map-snapshot tool should send an image.
+export type ChatTarget =
+  | { kind: "world" }
+  | { kind: "dm"; threadId: string; label: string }
+  | { kind: "group"; groupId: string; label: string };
+
 export interface ChatOverview {
   world: number;
   groups: Record<string, number>;
